@@ -17,6 +17,7 @@ let toastTimer;
 let currentSubject = "cpp";
 let currentCourse = "cpp";
 let currentStateSubject = "cpp";
+let currentConversationId = "erase";
 
 const today = new Date(2026, 8, 28);
 const calendarState = {
@@ -32,24 +33,51 @@ const subjects = {
     state: "C++ 最近在集中处理 STL iterator 相关问题，erase 遍历仍是主要卡点。下一步适合先用少量题目确认写法是否稳定。",
     current: "C++ 最近在集中处理 STL iterator 相关问题。",
     candidate: "继续关注 erase 返回值和旧 iterator 的区别。",
+    recentEvidence: "erase 遍历还是容易写错。",
+    conversationIds: ["erase", "insert", "virtual"],
+    privateFileIds: ["private-stl", "private-final"],
+    memoryItems: [
+      { id: "erase-loop", title: "erase 遍历", summary: "删除元素后继续使用旧 iterator 的写法仍需要留意。", status: "active" },
+      { id: "complexity", title: "复杂度判断", summary: "遇到容器操作时先判断是否会引发元素移动。", status: "active" },
+      { id: "iterator-invalid", title: "iterator 失效", summary: "已经理解失效来自容器结构变化，而不是 erase 返回值本身。", status: "inactive" },
+    ],
+    recapCandidates: [
+      { id: "erase-loop", title: "erase 遍历", summary: "删除元素后应使用 erase 返回的新 iterator 继续遍历。", decision: null },
+      { id: "iterator-invalid", title: "iterator 失效", summary: "容器结构变化可能使原 iterator 不再指向可安全访问的位置。", decision: null },
+    ],
   },
   math: {
     name: "高等数学",
     state: "高等数学最近在复习极限与连续，适合用少量典型题确认定义与图像理解是否稳定。",
     current: "高等数学最近在复习极限与连续。",
     candidate: "下一步用典型题确认极限与连续的判定是否稳定。",
+    recentEvidence: "",
+    conversationIds: [],
+    privateFileIds: [],
+    memoryItems: [],
+    recapCandidates: [],
   },
   probability: {
     name: "概率论",
     state: "概率论暂时没有新的现状补充，可以在下次学习前先说明当前卡点。",
     current: "概率论暂时没有新的现状补充。",
     candidate: "下次学习前先补充当前章节和卡点。",
+    recentEvidence: "",
+    conversationIds: [],
+    privateFileIds: [],
+    memoryItems: [],
+    recapCandidates: [],
   },
   ds: {
     name: "数据结构",
     state: "数据结构当前适合围绕树和图的基础操作做一次小范围回顾。",
     current: "数据结构当前适合围绕树和图的基础操作回顾。",
     candidate: "先回顾树和图的基础操作，再决定是否刷题。",
+    recentEvidence: "",
+    conversationIds: [],
+    privateFileIds: [],
+    memoryItems: [],
+    recapCandidates: [],
   },
 };
 
@@ -86,8 +114,8 @@ const courseResources = {
 };
 
 const privateFiles = {
-  "private-stl": { title: "STL 容器与迭代器.pdf", meta: "私人资料 · PDF · 2024", copy: "这是当前学科内保存的私人资料。" },
-  "private-final": { title: "C++ 期末复习题.pdf", meta: "私人资料 · PDF", copy: "可在当前学习中作为参考资料使用。" },
+  "private-stl": { subjectKey: "cpp", title: "STL 容器与迭代器.pdf", meta: "私人资料 · PDF · 2024", copy: "这是当前学科内保存的私人资料。" },
+  "private-final": { subjectKey: "cpp", title: "C++ 期末复习题.pdf", meta: "私人资料 · PDF", copy: "可在当前学习中作为参考资料使用。" },
 };
 
 const submissions = {
@@ -96,18 +124,33 @@ const submissions = {
 };
 
 const conversations = {
-  erase: [
-    ["user", "erase 不是返回一个元素吗，为什么会和 iterator 失效有关？"],
-    ["ai", "这里先区分两件事：erase 的返回值可继续使用，但被删除位置之后原有的 iterator 可能已经失效。"],
-  ],
-  insert: [
-    ["user", "insert 到底返回什么？"],
-    ["ai", "多数 STL 容器的 insert 会返回指向新插入元素的 iterator，但是否导致其他 iterator 失效，要看具体容器和插入位置。"],
-  ],
-  virtual: [
-    ["user", "虚析构为什么需要 virtual？"],
-    ["ai", "当你通过基类指针删除派生类对象时，virtual 析构能保证派生类析构逻辑也被执行。"],
-  ],
+  erase: {
+    subjectKey: "cpp",
+    title: "vector erase 后 iterator 为什么失效",
+    updatedAt: "今天 20:12",
+    messages: [
+      ["user", "erase 不是返回一个元素吗，为什么会和 iterator 失效有关？"],
+      ["ai", "这里先区分两件事：erase 的返回值可继续使用，但被删除位置之后原有的 iterator 可能已经失效。"],
+    ],
+  },
+  insert: {
+    subjectKey: "cpp",
+    title: "insert 到底返回什么",
+    updatedAt: "昨天 22:04",
+    messages: [
+      ["user", "insert 到底返回什么？"],
+      ["ai", "多数 STL 容器的 insert 会返回指向新插入元素的 iterator，但是否导致其他 iterator 失效，要看具体容器和插入位置。"],
+    ],
+  },
+  virtual: {
+    subjectKey: "cpp",
+    title: "虚析构为什么需要 virtual",
+    updatedAt: "9 月 26 日",
+    messages: [
+      ["user", "虚析构为什么需要 virtual？"],
+      ["ai", "当你通过基类指针删除派生类对象时，virtual 析构能保证派生类析构逻辑也被执行。"],
+    ],
+  },
 };
 
 function showToast(message) {
@@ -267,6 +310,132 @@ function filterCourseResources(query = "") {
   renderCourseResources(resources);
 }
 
+function getSubject(subjectKey = currentSubject) {
+  return subjects[subjectKey] ?? subjects.cpp;
+}
+
+function getSubjectConversations(subjectKey = currentSubject) {
+  const subject = getSubject(subjectKey);
+  return (subject.conversationIds ?? [])
+    .map((id) => ({ id, ...conversations[id] }))
+    .filter((conversation) => Array.isArray(conversation.messages));
+}
+
+function renderReviewHome() {
+  const subject = getSubject();
+  const allRecent = getSubjectConversations();
+  const recent = allRecent.slice(0, 3);
+  const recentList = document.querySelector("[data-review-recent]");
+  const recentCount = document.querySelector("[data-review-recent-count]");
+  if (recentCount) recentCount.textContent = `最近有 ${allRecent.length} 个对话`;
+  if (recentList) {
+    recentList.innerHTML = recent.length
+      ? recent.map((conversation) => `<li><button class="inline-row review-conversation-row" data-open-conversation="${conversation.id}"><strong>${escapeHTML(conversation.title)}</strong><span>${escapeHTML(conversation.updatedAt || "")}</span></button></li>`).join("")
+      : '<li class="empty-copy">还没有学习对话。</li>';
+  }
+  const active = (subject.memoryItems ?? []).filter((item) => item.status === "active");
+  const inactive = (subject.memoryItems ?? []).filter((item) => item.status === "inactive");
+  const renderMemory = (items, emptyText) => items.length
+    ? items.map((item) => `<div><strong>${escapeHTML(item.title)}</strong><p>${escapeHTML(item.summary)}</p></div>`).join("")
+    : `<p class="empty-copy">${emptyText}</p>`;
+  const preview = document.querySelector("[data-review-memory-preview]");
+  const activeList = document.querySelector("[data-review-memory-active]");
+  const inactiveList = document.querySelector("[data-review-memory-inactive]");
+  if (preview) preview.innerHTML = renderMemory(active.slice(0, 2), "当前没有需要继续关注的内容。");
+  if (activeList) activeList.innerHTML = renderMemory(active, "当前没有需要继续关注的内容。");
+  if (inactiveList) inactiveList.innerHTML = renderMemory(inactive, "还没有已形成认识的内容。");
+}
+
+function renderHistoryDrawer() {
+  const list = document.querySelector("[data-history-list]");
+  if (!list) return;
+  const recent = getSubjectConversations();
+  list.innerHTML = recent.length
+    ? recent.map((conversation) => `<button data-open-conversation="${conversation.id}"><strong>${escapeHTML(conversation.title)}</strong><span>${escapeHTML(conversation.updatedAt || "")}</span></button>`).join("")
+    : '<p class="empty-copy">这个学科还没有历史对话。</p>';
+}
+
+function renderRecapReferences() {
+  const container = document.querySelector("[data-recap-references]");
+  if (!container) return;
+  const recent = getSubjectConversations().slice(0, 3);
+  container.innerHTML = recent.length
+    ? recent.map((conversation, index) => `<label><input type="checkbox" ${index < 2 ? "checked" : ""} /> ${escapeHTML(conversation.title)}</label>`).join("")
+    : '<p class="empty-copy">还没有最近对话，可以直接填写上面的复盘内容。</p>';
+}
+
+function renderRecapCandidates() {
+  const subject = getSubject();
+  const title = document.querySelector("[data-candidate-memory-title]");
+  const container = document.querySelector("[data-candidate-memory]");
+  if (!container) return;
+  const visible = (subject.recapCandidates ?? []).filter((candidate) => candidate.decision !== "ignored");
+  if (title) {
+    title.textContent = visible.length
+      ? `这次有 ${visible.length} 条内容可能值得留下`
+      : "这次暂时没有可确认的候选内容";
+  }
+  container.innerHTML = visible.length
+    ? visible.map((candidate) => `
+      <article class="${candidate.decision === "kept" ? "kept" : ""}" data-memory-id="${candidate.id}">
+        <strong>${escapeHTML(candidate.title)}</strong>
+        <p>${escapeHTML(candidate.summary)}</p>
+        <div>
+          <button data-memory-action="edit">编辑</button>
+          <button data-memory-action="ignore">忽略</button>
+          <button data-memory-action="keep" ${candidate.decision === "kept" ? "disabled" : ""}>${candidate.decision === "kept" ? "已保留" : "保留"}</button>
+        </div>
+      </article>`).join("")
+    : '<p class="empty-copy">当前静态原型没有生成新的候选内容。</p>';
+}
+
+function renderPrivateResources() {
+  const subject = getSubject();
+  const list = document.querySelector("[data-private-resources]");
+  const title = document.querySelector("[data-subject-files-title]");
+  if (title) title.textContent = `${subject.name} 资料`;
+  if (!list) return;
+  const files = (subject.privateFileIds ?? []).map((id) => ({ id, ...privateFiles[id] })).filter((file) => file.title);
+  list.innerHTML = files.length
+    ? files.map((file) => {
+        const ext = file.title.includes(".") ? file.title.split(".").pop().toUpperCase() : "FILE";
+        return `<div class="file-row">
+          <span class="file-icon">${escapeHTML(ext)}</span>
+          <div><strong>${escapeHTML(file.title)}</strong><span>${escapeHTML(file.meta.replace("私人资料 · ", ""))}</span></div>
+          <button class="more-btn" data-open-file="${file.id}">⋯</button>
+        </div>`;
+      }).join("")
+    : '<p class="empty-copy resource-empty">还没有私人资料。</p>';
+}
+
+function summarizeState(value) {
+  const text = value.trim();
+  return text.length > 34 ? `${text.slice(0, 34)}…` : text;
+}
+
+function renderStateOverview() {
+  const container = document.querySelector("[data-state-overview-list]");
+  if (!container) return;
+  container.innerHTML = Object.entries(subjects).map(([key, subject]) => `
+    <button class="state-row" data-state-detail="${key}">
+      <strong>${escapeHTML(subject.name)}</strong>
+      <span>${escapeHTML(summarizeState(subject.current))}</span>
+      <em>›</em>
+    </button>`).join("");
+}
+
+function renderSubjectWorkspace() {
+  const subject = getSubject();
+  document.querySelectorAll("[data-recap-subject]").forEach((node) => {
+    node.textContent = subject.name;
+  });
+  renderReviewHome();
+  renderHistoryDrawer();
+  renderRecapReferences();
+  renderPrivateResources();
+  renderStateOverview();
+}
+
 function showSubjectPanel(name) {
   document.querySelectorAll("[data-subject-panel]").forEach((panel) => {
     panel.classList.toggle("active", panel.dataset.subjectPanel === name);
@@ -275,19 +444,24 @@ function showSubjectPanel(name) {
   document.querySelectorAll("[data-subject-tab]").forEach((button) => {
     button.classList.toggle("active", button.dataset.subjectTab === tabName);
   });
-  subjectTitle.textContent = name === "spaces" ? "学科空间" : subjects[currentSubject].name;
+  subjectTitle.textContent = name === "spaces" ? "学科空间" : getSubject().name;
   subjectSubnav.classList.toggle("compact-state", name === "spaces");
+  if (name === "review") renderReviewHome();
+  if (name === "files") renderPrivateResources();
 }
 
 function openSubject(subjectKey) {
+  if (!subjects[subjectKey]) return;
   currentSubject = subjectKey;
   currentStateSubject = subjectKey;
-  showSubjectPanel("learn");
-  if (subjectKey === "cpp") {
-    loadConversation("erase", false);
-    return;
+  renderSubjectWorkspace();
+  const recent = getSubjectConversations(subjectKey);
+  if (recent.length) {
+    loadConversation(recent[0].id, false);
+  } else {
+    startNewChat(true);
   }
-  chatSurface.innerHTML = `<div class="chat-message ai"><p>可以直接开始一个关于 ${subjects[currentSubject].name} 的新问题。</p></div>`;
+  showSubjectPanel("learn");
 }
 
 function showRecapStep(name) {
@@ -295,29 +469,39 @@ function showRecapStep(name) {
   document.querySelectorAll("[data-recap-panel]").forEach((panel) => {
     panel.classList.toggle("active", panel.dataset.recapPanel === name);
   });
+  if (name === "setup") renderRecapReferences();
+  if (name === "memory") renderRecapCandidates();
 }
 
 function updateStateDetail(subjectKey) {
   currentStateSubject = subjectKey;
-  const subject = subjects[subjectKey] ?? subjects.cpp;
+  const subject = getSubject(subjectKey);
   document.querySelector("[data-state-title]").textContent = subject.name;
   document.querySelector("[data-state-copy]").textContent = subject.state;
   document.querySelector("[data-state-edit-title]").textContent = `${subject.name} · 现状更新`;
   document.querySelector("[data-state-current]").textContent = subject.current;
   document.querySelector("[data-state-candidate]").textContent = subject.candidate;
   document.querySelector("[data-state-textarea]").value = subject.candidate;
+  const evidenceWrap = document.querySelector("[data-state-evidence-wrap]");
+  const evidence = document.querySelector("[data-state-evidence]");
+  if (evidenceWrap && evidence) {
+    evidence.textContent = subject.recentEvidence || "";
+    evidenceWrap.classList.toggle("hidden", !subject.recentEvidence);
+  }
 }
 
 function showStatePanel(name) {
   document.querySelectorAll("[data-state-panel]").forEach((panel) => {
     panel.classList.toggle("active", panel.dataset.statePanel === name);
   });
+  if (name === "overview") renderStateOverview();
 }
 
 function openDrawer(name, scope) {
   document.querySelectorAll("[data-drawer]").forEach((drawer) => {
     drawer.classList.toggle("active", drawer.dataset.drawer === name);
   });
+  if (name === "history") renderHistoryDrawer();
   if (name === "state") {
     if (scope === "subject") {
       updateStateDetail(currentSubject);
@@ -357,9 +541,24 @@ function openSubmissionDrawer(submissionId) {
   openDrawer("submission");
 }
 
+function renderConversation(id) {
+  const conversation = conversations[id];
+  if (!conversation) return;
+  chatSurface.innerHTML = conversation.messages
+    .map(([role, text]) => `<div class="chat-message ${role}"><p>${escapeHTML(text)}</p></div>`)
+    .join("");
+}
+
 function loadConversation(id, switchToLearn = true) {
-  const messages = conversations[id] ?? conversations.erase;
-  chatSurface.innerHTML = messages.map(([role, text]) => `<div class="chat-message ${role}"><p>${text}</p></div>`).join("");
+  const conversation = conversations[id];
+  if (!conversation) return;
+  if (conversation.subjectKey && subjects[conversation.subjectKey]) {
+    currentSubject = conversation.subjectKey;
+    currentStateSubject = conversation.subjectKey;
+  }
+  currentConversationId = id;
+  renderSubjectWorkspace();
+  renderConversation(id);
   if (switchToLearn) {
     showView("subjects");
     showSubjectPanel("learn");
@@ -367,36 +566,88 @@ function loadConversation(id, switchToLearn = true) {
   closeDrawer();
 }
 
-function startNewChat() {
-  chatSurface.innerHTML = `<div class="chat-message ai"><p>可以直接开始一个新的问题。当前学科是 ${subjects[currentSubject].name}。</p></div>`;
-  showToast("已开始新的空白对话。");
+function startNewChat(silent = false) {
+  currentConversationId = null;
+  chatSurface.innerHTML = `<div class="chat-message ai"><p>可以直接开始一个新的问题。当前学科是 ${escapeHTML(getSubject().name)}。</p></div>`;
+  if (!silent) showToast("已开始新的空白对话。");
+}
+
+function createConversationFromMessage(text) {
+  const id = `conversation-${Date.now()}`;
+  const title = text.length > 26 ? `${text.slice(0, 26)}…` : text;
+  conversations[id] = {
+    subjectKey: currentSubject,
+    title,
+    updatedAt: "刚刚",
+    messages: [["user", text]],
+  };
+  const subject = getSubject();
+  subject.conversationIds = [id, ...(subject.conversationIds ?? []).filter((item) => item !== id)];
+  currentConversationId = id;
+  return id;
+}
+
+function appendLearningMessage(text) {
+  const subject = getSubject();
+  if (!currentConversationId || !conversations[currentConversationId] || conversations[currentConversationId].subjectKey !== currentSubject) {
+    createConversationFromMessage(text);
+  } else {
+    conversations[currentConversationId].messages.push(["user", text]);
+    conversations[currentConversationId].updatedAt = "刚刚";
+    subject.conversationIds = [currentConversationId, ...(subject.conversationIds ?? []).filter((id) => id !== currentConversationId)];
+  }
+  renderConversation(currentConversationId);
+  renderReviewHome();
+  renderHistoryDrawer();
+  renderRecapReferences();
 }
 
 function applyMemoryAction(button) {
   const action = button.dataset.memoryAction;
   const article = button.closest("article");
   if (!article) return;
+  const subject = getSubject();
+  const candidate = (subject.recapCandidates ?? []).find((item) => item.id === article.dataset.memoryId);
+  if (!candidate) return;
+
   if (action === "ignore") {
-    article.classList.add("hidden");
+    candidate.decision = "ignored";
+    renderRecapCandidates();
     showToast("已忽略这条候选记忆点。");
     return;
   }
+
+  const paragraph = article.querySelector("p");
+  const existingEditor = article.querySelector("textarea");
+  const currentSummary = existingEditor?.value.trim() || paragraph?.textContent.trim() || candidate.summary;
+
   if (action === "keep") {
-    article.classList.add("kept");
-    button.textContent = "已保留";
-    button.disabled = true;
-    showToast("已保留这条记忆点。");
+    candidate.summary = currentSummary;
+    candidate.decision = "kept";
+    const existingItem = (subject.memoryItems ?? []).find((item) => item.id === candidate.id || item.title === candidate.title);
+    if (existingItem) {
+      existingItem.title = candidate.title;
+      existingItem.summary = candidate.summary;
+      existingItem.status = "active";
+    } else {
+      subject.memoryItems.push({ id: candidate.id, title: candidate.title, summary: candidate.summary, status: "active" });
+    }
+    renderRecapCandidates();
+    renderReviewHome();
+    showToast("已保留，并同步到回顾页。");
     return;
   }
-  const paragraph = article.querySelector("p");
-  const existing = article.querySelector("textarea");
-  if (existing) {
+
+  if (existingEditor) {
+    candidate.summary = existingEditor.value.trim() || candidate.summary;
     const nextParagraph = document.createElement("p");
-    nextParagraph.textContent = existing.value;
-    existing.replaceWith(nextParagraph);
+    nextParagraph.textContent = candidate.summary;
+    existingEditor.replaceWith(nextParagraph);
     button.textContent = "编辑";
     return;
   }
+
+  if (!paragraph) return;
   const editor = document.createElement("textarea");
   editor.value = paragraph.textContent;
   editor.className = "memory-editor";
@@ -430,25 +681,20 @@ function addSubmissionFiles(files) {
 }
 
 function addPrivateFiles(files) {
-  const list = document.querySelector("[data-private-resources]");
-  if (!list || !files.length) return;
+  if (!files.length) return;
+  const subject = getSubject();
+  subject.privateFileIds ??= [];
   Array.from(files).forEach((file, index) => {
     const id = `uploaded-private-${Date.now()}-${index}`;
-    const safeName = escapeHTML(file.name);
     privateFiles[id] = {
+      subjectKey: currentSubject,
       title: file.name,
       meta: `私人资料 · ${file.name.split(".").pop()?.toUpperCase() || "文件"}`,
       copy: "这是本次原型会话中临时加入的私人资料。",
     };
-    list.insertAdjacentHTML(
-      "afterbegin",
-      `<div class="file-row">
-        <span class="file-icon">FILE</span>
-        <div><strong>${safeName}</strong><span>刚刚加入</span></div>
-        <button class="more-btn" data-open-file="${id}">⋯</button>
-      </div>`,
-    );
+    subject.privateFileIds.unshift(id);
   });
+  renderPrivateResources();
   showToast("已加入当前学科资料。");
 }
 
@@ -462,11 +708,17 @@ function addSubject() {
     state: `${cleanName} 还没有新的现状补充。`,
     current: `${cleanName} 还没有新的现状补充。`,
     candidate: "先补充当前目标、最近学习内容或主要卡点。",
+    recentEvidence: "",
+    conversationIds: [],
+    privateFileIds: [],
+    memoryItems: [],
+    recapCandidates: [],
   };
   document.querySelector(".subject-grid")?.insertAdjacentHTML(
     "beforeend",
     `<button class="course-card" data-open-subject="${key}"><strong>${escapeHTML(cleanName)}</strong></button>`,
   );
+  renderStateOverview();
   showToast("已加入学科空间。");
 }
 
@@ -513,13 +765,6 @@ document.querySelectorAll("[data-close-drawer]").forEach((button) => {
 
 document.querySelector("[data-state-edit]")?.addEventListener("click", () => showStatePanel("edit"));
 
-document.querySelectorAll("[data-state-detail]").forEach((button) => {
-  button.addEventListener("click", () => {
-    updateStateDetail(button.dataset.stateDetail);
-    showStatePanel("detail");
-  });
-});
-
 document.querySelector("[data-state-back]")?.addEventListener("click", () => showStatePanel("overview"));
 
 document.querySelector("[data-state-cancel]")?.addEventListener("click", () => {
@@ -533,6 +778,7 @@ document.querySelector("[data-state-adopt]")?.addEventListener("click", () => {
   subject.current = textarea.value.trim() || subject.current;
   subject.state = subject.current;
   updateStateDetail(currentStateSubject);
+  renderStateOverview();
   showStatePanel("detail");
   showToast("已采用现状更新。");
 });
@@ -643,6 +889,13 @@ document.querySelectorAll(".library-search-head input, .subject-index-head input
 });
 
 document.addEventListener("click", (event) => {
+  const stateDetailButton = event.target.closest("[data-state-detail]");
+  if (stateDetailButton) {
+    updateStateDetail(stateDetailButton.dataset.stateDetail);
+    showStatePanel("detail");
+    return;
+  }
+
   const subjectButton = event.target.closest("[data-open-subject]");
   if (subjectButton) {
     openSubject(subjectButton.dataset.openSubject);
@@ -668,7 +921,7 @@ document.addEventListener("click", (event) => {
   if (memoryButton) applyMemoryAction(memoryButton);
 });
 
-document.querySelector("[data-new-chat]")?.addEventListener("click", startNewChat);
+document.querySelector("[data-new-chat]")?.addEventListener("click", () => startNewChat());
 
 document.querySelector("[data-file-use]")?.addEventListener("click", () => {
   closeDrawer();
@@ -697,9 +950,24 @@ document.querySelectorAll("[data-chat-form]").forEach((form) => {
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     const input = form.querySelector("input");
-    if (input && input.value.trim()) input.value = "";
-    showToast("已加入当前对话。");
+    const text = input?.value.trim();
+    if (!text) return;
+
+    if (form.closest("[data-subject-panel='learn']")) {
+      appendLearningMessage(text);
+      input.value = "";
+      showToast("已加入当前对话；回顾页已同步最近学习。");
+      return;
+    }
+
+    const recapChat = form.closest("[data-recap-panel='chat']")?.querySelector(".recap-chat");
+    if (recapChat) {
+      recapChat.insertAdjacentHTML("beforeend", `<div class="chat-message user"><p>${escapeHTML(text)}</p></div>`);
+    }
+    input.value = "";
+    showToast("已加入本次复盘对话。");
   });
 });
 
 renderCalendar();
+renderSubjectWorkspace();

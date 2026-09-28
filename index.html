@@ -250,14 +250,11 @@
             <div class="section-head">
               <div>
                 <h1>最近学习</h1>
+                <p class="section-meta" data-review-recent-count></p>
               </div>
               <button data-recap-step="setup">开始一次复盘</button>
             </div>
-            <ul class="plain-list">
-              <li><button class="inline-row" data-open-conversation="erase">vector erase 后 iterator 为什么失效</button></li>
-              <li><button class="inline-row" data-open-conversation="insert">insert 到底返回什么</button></li>
-              <li><button class="inline-row" data-open-conversation="virtual">虚析构为什么需要 virtual</button></li>
-            </ul>
+            <ul class="plain-list" data-review-recent></ul>
           </section>
 
           <section class="plain-section">
@@ -267,23 +264,15 @@
               </div>
               <button class="text-link" data-memory-toggle>查看全部 ›</button>
             </div>
-            <div class="memory-list">
-              <div><strong>erase 遍历</strong><p>仍容易在删除元素后错误使用旧 iterator。</p></div>
-              <div><strong>iterator 失效</strong><p>已经理解失效与容器结构变化之间的关系。</p></div>
-            </div>
+            <div class="memory-list" data-review-memory-preview></div>
             <div class="memory-all hidden" data-memory-all>
               <section>
                 <h3>当前值得关注</h3>
-                <div class="memory-list">
-                  <div><strong>erase 遍历</strong><p>删除元素后继续使用旧 iterator 的写法仍需要留意。</p></div>
-                  <div><strong>复杂度判断</strong><p>遇到容器操作时先判断是否会引发元素移动。</p></div>
-                </div>
+                <div class="memory-list" data-review-memory-active></div>
               </section>
               <section>
                 <h3>已形成认识</h3>
-                <div class="memory-list">
-                  <div><strong>iterator 失效</strong><p>已经理解失效来自容器结构变化，而不是 erase 返回值本身。</p></div>
-                </div>
+                <div class="memory-list" data-review-memory-inactive></div>
               </section>
             </div>
           </section>
@@ -299,9 +288,7 @@
             </label>
             <div class="reference-pick">
               <span>参考最近对话</span>
-              <label><input type="checkbox" checked /> vector erase 后 iterator 为什么失效</label>
-              <label><input type="checkbox" checked /> insert 到底返回什么</label>
-              <label><input type="checkbox" /> 虚析构为什么需要 virtual</label>
+              <div class="reference-list" data-recap-references></div>
               <button class="text-link" data-open-drawer="history">＋ 添加</button>
             </div>
             <button class="primary-action" data-recap-step="chat">开始</button>
@@ -312,7 +299,7 @@
               <header class="conversation-header">
                 <button class="back-link" data-recap-step="setup">‹ 本次复盘</button>
                 <div class="conversation-context">
-                  <strong>C++</strong>
+                  <strong data-recap-subject>C++</strong>
                   <span>复盘对话</span>
                 </div>
                 <div class="conversation-actions">
@@ -335,25 +322,14 @@
 
           <section class="recap-step" data-recap-panel="memory">
             <button class="back-link" data-recap-step="chat">← 对话</button>
-            <h1>这次有 2 条内容可能值得留下</h1>
-            <div class="candidate-memory">
-              <article>
-                <strong>erase 遍历</strong>
-                <p>删除元素后应使用 erase 返回的新 iterator 继续遍历。</p>
-                <div><button data-memory-action="edit">编辑</button><button data-memory-action="ignore">忽略</button><button data-memory-action="keep">保留</button></div>
-              </article>
-              <article>
-                <strong>iterator 失效</strong>
-                <p>容器结构变化可能使原 iterator 不再指向可安全访问的位置。</p>
-                <div><button data-memory-action="edit">编辑</button><button data-memory-action="ignore">忽略</button><button data-memory-action="keep">保留</button></div>
-              </article>
-            </div>
+            <h1 data-candidate-memory-title>这次有 2 条内容可能值得留下</h1>
+            <div class="candidate-memory" data-candidate-memory></div>
           </section>
         </div>
 
         <div class="subject-panel" data-subject-panel="files">
           <div class="page-heading simple">
-            <h1 class="sr-only">C++ 资料</h1>
+            <h1 class="sr-only" data-subject-files-title>C++ 资料</h1>
             <div class="subject-actions">
               <label class="search-box compact">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -366,18 +342,7 @@
               <input class="sr-only" type="file" multiple data-upload-input="private-file" />
             </div>
           </div>
-          <div class="resource-list flat" data-private-resources>
-            <div class="file-row">
-              <span class="file-icon">PDF</span>
-              <div><strong>STL 容器与迭代器.pdf</strong><span>PDF · 2024</span></div>
-              <button class="more-btn" data-open-file="private-stl">⋯</button>
-            </div>
-            <div class="file-row">
-              <span class="file-icon">PDF</span>
-              <div><strong>C++ 期末复习题.pdf</strong><span>PDF</span></div>
-              <button class="more-btn" data-open-file="private-final">⋯</button>
-            </div>
-          </div>
+          <div class="resource-list flat" data-private-resources></div>
         </div>
       </section>
     </main>
@@ -387,21 +352,7 @@
       <button class="drawer-close" data-close-drawer aria-label="关闭">×</button>
       <section class="state-panel active" data-state-panel="overview">
         <h2>学习现状</h2>
-        <button class="state-row" data-state-detail="cpp">
-          <strong>C++</strong>
-          <span>iterator 相关问题仍是近期主要卡点。</span>
-          <em>›</em>
-        </button>
-        <button class="state-row" data-state-detail="math">
-          <strong>高等数学</strong>
-          <span>最近在复习极限与连续。</span>
-          <em>›</em>
-        </button>
-        <button class="state-row" data-state-detail="probability">
-          <strong>概率论</strong>
-          <span>还没有新的现状补充。</span>
-          <em>›</em>
-        </button>
+        <div data-state-overview-list></div>
       </section>
       <section class="state-panel" data-state-panel="detail">
         <button class="back-link" data-state-back>‹ 学习现状</button>
@@ -412,7 +363,7 @@
       <section class="state-panel" data-state-panel="edit">
         <h2 data-state-edit-title>C++ · 现状更新</h2>
         <p><strong>当前记录</strong><br /><span data-state-current>C++ 最近在集中处理 STL iterator 相关问题。</span></p>
-        <p><strong>最近你提到</strong><br />“erase 遍历还是容易写错。”</p>
+        <p data-state-evidence-wrap><strong>最近你提到</strong><br />“<span data-state-evidence>erase 遍历还是容易写错。</span>”</p>
         <div class="state-candidate">
           <strong>候选更新</strong>
           <p data-state-candidate>继续关注 erase 返回值和旧 iterator 的区别。</p>
@@ -431,11 +382,7 @@
     <aside class="side-drawer" data-drawer="history" aria-label="历史对话">
       <button class="drawer-close" data-close-drawer aria-label="关闭">×</button>
       <h2>历史对话</h2>
-      <div class="history-list">
-        <button data-open-conversation="erase"><strong>vector erase 后 iterator 为什么失效</strong><span>今天 20:12</span></button>
-        <button data-open-conversation="insert"><strong>insert 到底返回什么</strong><span>昨天 22:04</span></button>
-        <button data-open-conversation="virtual"><strong>虚析构为什么需要 virtual</strong><span>9 月 26 日</span></button>
-      </div>
+      <div class="history-list" data-history-list></div>
     </aside>
 
     <aside class="side-drawer" data-drawer="file" aria-label="资料详情">

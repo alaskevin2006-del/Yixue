@@ -1,0 +1,10 @@
+{
+  "name": "yixue-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "preview": "npx http-server dist -p 4173"
+  }
+}

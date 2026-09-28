@@ -525,6 +525,48 @@ textarea::placeholder {
   align-items: center;
 }
 
+.subject-index-head,
+.subject-grid {
+  width: min(820px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.subject-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 28px;
+  border-top: 1px solid var(--line);
+}
+
+.subject-grid .course-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  place-items: center stretch;
+  min-height: 76px;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  text-align: left;
+}
+
+.subject-grid .course-card::after {
+  align-self: center;
+  color: var(--muted);
+  font-size: 22px;
+  content: "›";
+}
+
+.subject-grid .course-card strong {
+  align-self: center;
+  font-size: 18px;
+  font-weight: 680;
+}
+
+.subject-grid .course-card:hover,
+.subject-grid .course-card:focus-visible {
+  color: #5e651b;
+}
+
 .subject-back {
   margin-bottom: 0;
 }
@@ -781,6 +823,47 @@ textarea::placeholder {
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
+}
+
+.subject-panel[data-subject-panel="learn"] .conversation-header {
+  justify-content: flex-end;
+}
+
+.section-meta,
+.empty-copy,
+.review-conversation-row span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.section-meta {
+  margin: 4px 0 0;
+}
+
+.review-conversation-row {
+  display: grid;
+  gap: 3px;
+}
+
+.review-conversation-row strong {
+  font-weight: 650;
+}
+
+.resource-empty {
+  padding: 18px 0;
+}
+
+.reference-list {
+  display: grid;
+}
+
+.reference-list label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
 }
 
 .chat-surface,

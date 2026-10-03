@@ -1,0 +1,43 @@
+/* Demo responsibilities share the R1 chat shell; no styles loaded in real-local mode. */
+[data-product-demo-marker] { border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; font-size: 11px; color: var(--muted); }
+.demo-task { width: min(100%, 760px); margin: 0 auto; padding: 4px 4px 28px; }
+.demo-task h2 { font-size: 24px; margin: 0 0 8px; }
+.demo-task h3, dialog h3 { font-size: 16px; font-weight: 550; margin: 0 0 12px; }
+.demo-section { margin: 28px 0; }
+.demo-section > .text-link, .demo-source-list > span, .demo-source-summary > .text-link { display: block; text-align: left; margin: 10px 0; line-height: 1.6; }
+.demo-label { display: block; margin: 24px 0 10px; font-size: 15px; }
+.demo-input { width: 100%; border: 1px solid var(--line-strong); background: var(--panel); border-radius: 8px; padding: 12px; resize: vertical; line-height: 1.7; font: inherit; }
+.demo-actions { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; margin: 16px 0; }
+.demo-selection-row { display: flex; gap: 12px; padding: 14px 0; align-items: start; border-bottom: 1px solid var(--line); cursor: pointer; line-height: 1.7; }
+.demo-selection-row input { width: auto; flex: none; margin: 6px 0; accent-color: var(--accent); }
+.demo-selection-row span { min-width: 0; overflow-wrap: anywhere; }
+.demo-source-dialog > button { margin-top: 24px; }
+.demo-source-summary { border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 24px; }
+.demo-source-summary .text-link { font-size: 13px; }
+.demo-review-messages { line-height: 1.8; margin: 20px 0 28px; }
+.demo-memory, .demo-candidate { padding: 18px 0; border-bottom: 1px solid var(--line); line-height: 1.8; }
+.demo-memory h3, .demo-candidate h3 { margin-bottom: 6px; }
+.demo-memory p, .demo-candidate p { margin: 6px 0 12px; font-size: 15px; }
+.demo-memory > .text-link { display: block; text-align: left; font-size: 12px; margin-top: 8px; line-height: 1.6; }
+.demo-evidence { font-size: 12px; color: var(--muted); margin-top: 14px; }
+.demo-evidence summary { cursor: pointer; }
+.demo-evidence button { display: block; text-align: left; margin-top: 8px; }
+.demo-past-memory { margin-top: 20px; }
+.demo-file-row { display: flex; flex-direction: column; gap: 7px; width: min(100%, 620px); margin: 16px 0; padding: 16px 18px; text-align: left; background: #f0f2ed; border: 1px solid var(--line); border-radius: 12px; }
+.demo-file-row:hover { background: #e9ede3; }
+.demo-file-name { font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+.demo-file-meta { font-size: 12px; color: var(--muted); }
+.demo-full-text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; line-height: 1.9; margin: 14px 0 22px; }
+.demo-state-dialog { position: fixed; inset: 0 0 0 auto; margin: 0; height: 100dvh; max-height: 100dvh; max-width: min(480px, 100vw); width: 480px; border-radius: 0; overflow-y: auto; }
+.demo-state-dialog > button { margin: 10px 20px 10px 0; }
+@media (max-width: 700px) {
+  .demo-task { padding: 4px 0 24px; }
+  .demo-section { margin: 22px 0; }
+  .demo-task h2 { font-size: 21px; }
+  .demo-state-dialog { width: 100vw; padding: 22px; }
+  [data-product-demo-marker] { top: 68px; padding: 2px 6px; }
+}
+
+.demo-fixture-provenance { border-left: 2px solid var(--line); padding-left: 12px; margin: 16px 0; }
+.demo-fixture-provenance > button { font-size: 12px; display: block; text-align: left; line-height: 1.7; }
+.demo-review-composer { margin: 20px 0 6px; }

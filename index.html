@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>逸学 Yixue</title>
-    <link rel="stylesheet" href="./styles.css?v=9" />
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <header class="topbar">
@@ -14,12 +14,7 @@
         <button class="nav-pill" data-view-link="library">资料库</button>
         <button class="nav-pill" data-view-link="subjects">学科空间</button>
       </nav>
-      <button class="profile-btn" data-open-drawer="profile" aria-label="个人入口">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="8" r="3.2"></circle>
-          <path d="M5.8 19.2c.9-3.4 3.1-5.1 6.2-5.1s5.3 1.7 6.2 5.1"></path>
-        </svg>
-      </button>
+<span class="dev-principal">DEV_ONLY · user-a</span>
     </header>
 
     <main>
@@ -41,387 +36,61 @@
               <button class="active" data-calendar-mode="day">日</button>
               <button data-calendar-mode="week">周</button>
             </div>
-            <button class="text-link" data-open-drawer="state">现状 ›</button>
+            <button class="text-link" data-future-state>现状 ›</button>
           </div>
         </div>
 
         <div class="timeline-shell" data-timeline-shell>
           <h1 class="sr-only" id="home-title">首页</h1>
           <div class="time-row"><span>18:00</span><div></div></div>
-          <div class="time-row event-row">
-            <span>19:00</span>
-            <article class="calendar-block fixed">
-              <strong>班会</strong>
-              <span>19:00 - 20:00</span>
-            </article>
-          </div>
-          <div class="time-row now-row">
-            <span>20:00</span>
-            <div class="now-line"><strong>现在</strong></div>
-          </div>
-          <div class="time-row candidate-row">
-            <span>21:00</span>
-            <article class="calendar-block candidate hidden" data-home-candidate>
-              <small>候选安排</small>
-              <strong>C++ iterator 复习</strong>
-              <span>21:00 - 22:00</span>
-            </article>
-          </div>
+          <div class="time-row event-row"><span>19:00</span><article class="calendar-block fixed"><strong>班会</strong><span>19:00 - 20:00</span></article></div>
+          <div class="time-row now-row"><span>20:00</span><div class="now-line"><strong>现在</strong></div></div>
+          <div class="time-row candidate-row"><span>21:00</span><article class="calendar-block candidate hidden" data-home-candidate><small>候选安排</small><strong>C++ iterator 复习</strong><span>21:00 - 22:00</span></article></div>
           <div class="time-row"><span>22:00</span><div></div></div>
         </div>
 
-        <section class="assistant-thread hidden" data-home-assist aria-label="行动辅助过程">
-          <div class="assist-line user">今晚想把 C++ iterator 失效再过一遍。</div>
-          <div class="assist-line ai">你希望安排成完整复习，还是先做几道相关题确认卡点？</div>
-          <div class="assist-actions">
-            <button data-home-candidate-action>继续调整</button>
-            <button data-home-candidate-action>采用</button>
+        <form class="bottom-composer" data-home-form><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8z"></path><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8z"></path></svg><input disabled aria-label="行动辅助输入" placeholder="行动辅助尚未接入；请在学科空间保存学习消息" /><button type="submit" disabled aria-label="发送"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M6 11l6-6 6 6"></path></svg></button></form>
+      </section>
+
+      <section class="view" id="library-view" aria-labelledby="library-title"><div class="page-heading"><h1 id="library-title">资料库</h1></div><p class="local-note">资料服务尚未接入本地后端。本阶段不会上传、解析或自动引用资料。</p></section>
+      <section class="view" id="subjects-view" aria-label="学科空间">
+      <div class="r1-error" data-api-error role="alert" hidden></div>
+        <section data-subject-index>
+          <div class="r1-index-heading"><h1>学科空间</h1><button class="r1-button" data-add-subject>添加学科</button></div>
+          <p class="local-note">本地开发 · 学科、对话和用户消息保存到本机 SQLite。</p>
+          <div class="r1-subject-tools"><input type="search" data-subject-search aria-label="搜索学科" placeholder="搜索学科…" /></div>
+          <p data-subject-loading role="status" hidden>正在读取学科…</p>
+          <div class="r1-subject-list" data-subject-list></div>
+        </section>
+        <section data-subject-workspace hidden>
+          <div class="r1-subject-heading">
+            <button class="r1-subject-back" data-subject-home aria-label="返回学科空间">‹</button>
+            <h1 data-current-subject></h1>
+            <button class="r1-nav-toggle" data-nav-toggle aria-label="收起对话导航" aria-expanded="true" aria-controls="conversation-navigation">☰ 对话</button>
+            <button class="text-link" data-future-state>现状</button>
+          </div>
+          <nav class="r1-tabs" aria-label="学科页面"><button class="active" data-subject-tab="learn">学习</button><button data-subject-tab="review">回顾</button><button data-subject-tab="files">资料</button></nav>
+          <div class="r1-learning" data-workspace-shell>
+            <button class="r1-nav-scrim" data-nav-scrim aria-label="关闭对话导航遮罩" hidden></button>
+            <aside id="conversation-navigation" class="r1-conversation-nav" data-conversation-nav aria-label="对话导航"><div class="r1-nav-heading"><strong>对话</strong><button class="text-link" data-nav-close aria-label="关闭对话导航">×</button></div><button class="r1-button r1-new-chat" data-new-conversation>+ 新对话</button><p data-conversation-loading role="status" hidden>正在读取对话…</p><div data-conversation-list></div></aside>
+            <div class="r1-task-region">
+            <section class="active r1-current-workspace" data-subject-panel="learn" aria-label="当前对话工作区">
+              <header class="r1-conversation-heading"><div><h2 data-current-conversation>选择或新建对话</h2><p data-message-target class="local-note">尚未选择对话</p></div><div class="r1-chat-actions"><button class="text-link" data-review-current hidden>回顾这次学习</button><button class="text-link r1-delete" data-delete-conversation disabled aria-label="删除当前对话">删除</button></div></header>
+              <p data-message-loading role="status" hidden>正在读取消息…</p>
+              <div class="r1-messages" data-messages aria-live="polite"></div>
+              <form class="r1-composer" data-message-form><label class="sr-only" for="message-input">学习输入</label><textarea id="message-input" data-message-input rows="3" placeholder="在当前对话中写下问题…" disabled></textarea><button class="r1-button" data-send-message type="submit" aria-label="发送消息" disabled>发送</button></form>
+              <p data-save-status class="local-note" role="status"></p><p data-model-status class="local-note">本地开发阶段未接入 AI；这里只保存用户消息。</p>
+            </section>
+          <section data-subject-panel="review" hidden><h2>回顾</h2><p>回顾与记忆服务尚未接入。当前对话不会自动成为复盘证据或学习记忆。</p></section>
+          <section data-subject-panel="files" hidden><h2>资料</h2><p>资料服务尚未接入。没有资料被自动用于当前学习。</p></section>
+            </div>
           </div>
         </section>
-
-        <form class="bottom-composer" data-home-form>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 3l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8z"></path>
-            <path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8z"></path>
-          </svg>
-          <input aria-label="行动辅助输入" placeholder="说说你的安排、变化，或者现在想怎么推进……" />
-          <button type="submit" aria-label="发送">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 5v14"></path>
-              <path d="M6 11l6-6 6 6"></path>
-            </svg>
-          </button>
-        </form>
-      </section>
-
-      <section class="view" id="library-view" aria-labelledby="library-title">
-        <div class="subnav">
-          <button class="under active" data-library-tab="public">公共资料</button>
-          <button class="under" data-library-tab="submissions">我要投稿</button>
-        </div>
-
-        <div class="library-panel active" data-library-panel="public">
-          <div class="page-heading simple library-search-head">
-            <h1 class="sr-only" id="library-title">公共资料</h1>
-            <label class="search-box">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="11" cy="11" r="6"></circle>
-                <path d="M16 16l4 4"></path>
-              </svg>
-              <input placeholder="搜索课程或资料……" />
-            </label>
-          </div>
-          <div class="course-grid">
-            <button class="course-card" data-open-course="cpp"><strong>C++</strong></button>
-            <button class="course-card" data-open-course="math"><strong>高等数学（上）</strong></button>
-            <button class="course-card" data-open-course="probability"><strong>概率论</strong></button>
-            <button class="course-card" data-open-course="ds"><strong>数据结构</strong></button>
-          </div>
-        </div>
-
-        <div class="library-panel" data-library-panel="course">
-          <div class="page-heading simple">
-            <div>
-              <button class="back-link" data-library-tab="public">← 公共资料</button>
-              <h1 data-course-title>C++</h1>
-            </div>
-            <label class="search-box compact">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="11" cy="11" r="6"></circle>
-                <path d="M16 16l4 4"></path>
-              </svg>
-              <input data-course-search placeholder="搜索 C++ 资料……" />
-            </label>
-          </div>
-          <div class="light-filters" aria-label="筛选">
-            <button data-course-filter="type">类型</button>
-            <button data-course-filter="year">年份</button>
-            <button data-course-filter="sort">排序</button>
-          </div>
-          <div class="resource-list flat" data-course-resources>
-            <div class="file-row">
-              <span class="file-icon">PDF</span>
-              <div><strong>2025 C++ 期末试卷.pdf</strong><span>试卷 · 2025</span></div>
-              <button data-open-file="cpp-final">查看</button>
-            </div>
-            <div class="file-row">
-              <span class="file-icon">PDF</span>
-              <div><strong>STL 容器迭代器速查.pdf</strong><span>笔记 · 2024</span></div>
-              <button data-open-file="cpp-stl">查看</button>
-            </div>
-            <div class="file-row">
-              <span class="file-icon">PDF</span>
-              <div><strong>iterator 失效整理.pdf</strong><span>整理 · 2024</span></div>
-              <button data-open-file="cpp-iterator">查看</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="library-panel" data-library-panel="submissions">
-          <div class="upload-zone" role="group" aria-label="投稿上传">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 17V7"></path>
-              <path d="M7 12l5-5 5 5"></path>
-              <path d="M20 17.5a4 4 0 0 0-3.8-4A5.2 5.2 0 0 0 6 12.2 3.5 3.5 0 0 0 6.5 19H19"></path>
-            </svg>
-            <strong>将文件或文件夹拖到这里</strong>
-            <span>或点击选择文件 / 文件夹</span>
-            <div>
-              <button data-upload-trigger="submission-file">选择文件</button>
-              <button data-upload-trigger="submission-folder">选择文件夹</button>
-            </div>
-            <input class="sr-only" type="file" multiple data-upload-input="submission-file" />
-            <input class="sr-only" type="file" multiple webkitdirectory data-upload-input="submission-folder" />
-          </div>
-
-          <h2 class="section-label">我的投稿</h2>
-          <article class="submission-list flat" data-submissions-list>
-            <div class="file-row">
-              <span class="doc-icon"></span>
-              <strong>C++ 复习资料.pdf</strong>
-              <span class="status muted">审核中</span>
-              <button class="more-btn" data-open-submission="cpp-review">⋮</button>
-            </div>
-            <div class="file-row">
-              <span class="doc-icon"></span>
-              <strong>高数 2025 期末试卷.pdf</strong>
-              <span class="status ok">已收录</span>
-              <button class="more-btn" data-open-submission="math-final">⋮</button>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="view" id="subjects-view" aria-labelledby="subjects-title">
-        <div class="subnav subject-subnav compact-state">
-          <button class="back-link subject-back" data-subject-home>‹ 学科空间</button>
-          <strong id="subject-subnav-title">学科空间</strong>
-          <button class="under active" data-subject-tab="learn">学习</button>
-          <button class="under" data-subject-tab="review">回顾</button>
-          <button class="under" data-subject-tab="files">资料</button>
-          <button class="state-switch" data-open-drawer="state" data-state-scope="subject">现状⌄</button>
-        </div>
-
-        <div class="subject-panel active" data-subject-panel="spaces">
-          <div class="page-heading simple subject-index-head">
-            <h1 id="subjects-title">学科空间</h1>
-            <div class="subject-actions">
-              <label class="search-box compact">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="11" cy="11" r="6"></circle>
-                  <path d="M16 16l4 4"></path>
-                </svg>
-                <input placeholder="搜索学科……" />
-              </label>
-              <button class="round-add" data-add-subject aria-label="添加学科">＋</button>
-            </div>
-          </div>
-          <div class="course-grid subject-grid">
-            <button class="course-card" data-open-subject="cpp"><strong>C++</strong></button>
-            <button class="course-card" data-open-subject="math"><strong>高等数学</strong></button>
-            <button class="course-card" data-open-subject="probability"><strong>概率论</strong></button>
-            <button class="course-card" data-open-subject="ds"><strong>数据结构</strong></button>
-          </div>
-        </div>
-
-        <div class="subject-panel" data-subject-panel="learn">
-          <div class="conversation-shell">
-            <header class="conversation-header">
-              <div class="conversation-actions">
-                <button class="text-link" data-open-drawer="history">历史</button>
-                <button class="text-link" data-new-chat>新对话</button>
-              </div>
-            </header>
-            <section class="chat-surface" data-chat-surface>
-              <div class="chat-message user">erase 不是返回一个元素吗，为什么会和 iterator 失效有关？</div>
-              <div class="chat-message ai">
-                <p>这里先区分两件事：erase 的返回值可继续使用，但被删除位置之后原有的 iterator 可能已经失效。</p>
-              </div>
-            </section>
-            <form class="chat-composer" data-chat-form>
-              <input placeholder="继续问……" />
-              <button type="submit" aria-label="发送">↑</button>
-            </form>
-          </div>
-        </div>
-
-        <div class="subject-panel" data-subject-panel="review">
-          <section class="plain-section">
-            <div class="section-head">
-              <div>
-                <h1>最近学习</h1>
-                <p class="section-meta" data-review-recent-count></p>
-              </div>
-              <button data-recap-step="setup">开始一次复盘</button>
-            </div>
-            <ul class="plain-list" data-review-recent></ul>
-          </section>
-
-          <section class="plain-section">
-            <div class="section-head">
-              <div>
-                <h2>值得继续关注</h2>
-              </div>
-              <button class="text-link" data-memory-toggle>查看全部 ›</button>
-            </div>
-            <div class="memory-list" data-review-memory-preview></div>
-            <div class="memory-all hidden" data-memory-all>
-              <section>
-                <h3>当前值得关注</h3>
-                <div class="memory-list" data-review-memory-active></div>
-              </section>
-              <section>
-                <h3>已形成认识</h3>
-                <div class="memory-list" data-review-memory-inactive></div>
-              </section>
-            </div>
-          </section>
-        </div>
-
-        <div class="subject-panel" data-subject-panel="recap">
-          <section class="recap-step active" data-recap-panel="setup">
-            <button class="back-link" data-subject-tab="review">← 回顾</button>
-            <h1>本次复盘</h1>
-            <label class="field-stack">
-              <span>最近学得怎么样？</span>
-              <textarea placeholder="例如：最近主要在弄 iterator 失效，概念大概懂了，但 erase 遍历还是容易写错。"></textarea>
-            </label>
-            <div class="reference-pick">
-              <span>参考最近对话</span>
-              <div class="reference-list" data-recap-references></div>
-              <button class="text-link" data-open-drawer="history">＋ 添加</button>
-            </div>
-            <button class="primary-action" data-recap-step="chat">开始</button>
-          </section>
-
-          <section class="recap-step" data-recap-panel="chat">
-            <div class="conversation-shell recap-conversation">
-              <header class="conversation-header">
-                <button class="back-link" data-recap-step="setup">‹ 本次复盘</button>
-                <div class="conversation-context">
-                  <strong data-recap-subject>C++</strong>
-                  <span>复盘对话</span>
-                </div>
-                <div class="conversation-actions">
-                  <button class="text-link" data-open-drawer="history">参考对话</button>
-                  <button class="primary-action" data-recap-step="memory">完成</button>
-                </div>
-              </header>
-              <div class="recap-chat">
-                <div class="chat-message user">最近主要在弄 iterator 失效，概念大概懂了，但 erase 遍历还是容易写错。</div>
-                <div class="chat-message ai">
-                  <p>你觉得最容易出错的是哪一步？是 erase 后继续递增旧 iterator，还是不确定 erase 返回值该怎么接？</p>
-                </div>
-              </div>
-              <form class="chat-composer" data-chat-form>
-                <input placeholder="继续复盘……" />
-                <button type="submit" aria-label="发送">↑</button>
-              </form>
-            </div>
-          </section>
-
-          <section class="recap-step" data-recap-panel="memory">
-            <button class="back-link" data-recap-step="chat">← 对话</button>
-            <h1 data-candidate-memory-title>这次有 2 条内容可能值得留下</h1>
-            <div class="candidate-memory" data-candidate-memory></div>
-          </section>
-        </div>
-
-        <div class="subject-panel" data-subject-panel="files">
-          <div class="page-heading simple">
-            <h1 class="sr-only" data-subject-files-title>C++ 资料</h1>
-            <div class="subject-actions">
-              <label class="search-box compact">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="11" cy="11" r="6"></circle>
-                  <path d="M16 16l4 4"></path>
-                </svg>
-                <input placeholder="搜索……" />
-              </label>
-              <button class="primary-action" data-upload-trigger="private-file">上传</button>
-              <input class="sr-only" type="file" multiple data-upload-input="private-file" />
-            </div>
-          </div>
-          <div class="resource-list flat" data-private-resources></div>
-        </div>
       </section>
     </main>
-
-    <div class="drawer-scrim" data-close-drawer></div>
-    <aside class="side-drawer" data-drawer="state" aria-label="学习现状">
-      <button class="drawer-close" data-close-drawer aria-label="关闭">×</button>
-      <section class="state-panel active" data-state-panel="overview">
-        <h2>学习现状</h2>
-        <div data-state-overview-list></div>
-      </section>
-      <section class="state-panel" data-state-panel="detail">
-        <button class="back-link" data-state-back>‹ 学习现状</button>
-        <h2 data-state-title>C++</h2>
-        <p data-state-copy>C++ 最近在集中处理 STL iterator 相关问题，erase 遍历仍是主要卡点。下一步适合先用少量题目确认写法是否稳定。</p>
-        <button class="primary-action" data-state-edit>编辑现状</button>
-      </section>
-      <section class="state-panel" data-state-panel="edit">
-        <h2 data-state-edit-title>C++ · 现状更新</h2>
-        <p><strong>当前记录</strong><br /><span data-state-current>C++ 最近在集中处理 STL iterator 相关问题。</span></p>
-        <p data-state-evidence-wrap><strong>最近你提到</strong><br />“<span data-state-evidence>erase 遍历还是容易写错。</span>”</p>
-        <div class="state-candidate">
-          <strong>候选更新</strong>
-          <p data-state-candidate>继续关注 erase 返回值和旧 iterator 的区别。</p>
-        </div>
-        <label class="field-stack">
-          <span>可直接修改</span>
-          <textarea data-state-textarea>继续关注 erase 返回值和旧 iterator 的区别。</textarea>
-        </label>
-        <div class="drawer-actions">
-          <button class="text-link" data-state-cancel>取消</button>
-          <button class="primary-action" data-state-adopt>采用</button>
-        </div>
-      </section>
-    </aside>
-
-    <aside class="side-drawer" data-drawer="history" aria-label="历史对话">
-      <button class="drawer-close" data-close-drawer aria-label="关闭">×</button>
-      <h2>历史对话</h2>
-      <div class="history-list" data-history-list></div>
-    </aside>
-
-    <aside class="side-drawer" data-drawer="file" aria-label="资料详情">
-      <button class="drawer-close" data-close-drawer aria-label="关闭">×</button>
-      <h2 data-file-title>资料详情</h2>
-      <p class="drawer-muted" data-file-meta></p>
-      <div class="state-candidate">
-        <strong>预览</strong>
-        <p data-file-copy>这里展示资料的最小信息与可继续操作入口。</p>
-      </div>
-      <div class="drawer-actions">
-        <button class="text-link" data-close-drawer>关闭</button>
-        <button class="primary-action" data-file-use>用于当前学习</button>
-      </div>
-    </aside>
-
-    <aside class="side-drawer" data-drawer="submission" aria-label="投稿详情">
-      <button class="drawer-close" data-close-drawer aria-label="关闭">×</button>
-      <h2 data-submission-title>投稿详情</h2>
-      <p class="drawer-muted" data-submission-meta></p>
-      <div class="state-candidate">
-        <strong>状态</strong>
-        <p data-submission-copy></p>
-      </div>
-      <div class="drawer-actions">
-        <button class="text-link" data-close-drawer>关闭</button>
-      </div>
-    </aside>
-
-    <aside class="side-drawer" data-drawer="profile" aria-label="个人入口">
-      <button class="drawer-close" data-close-drawer aria-label="关闭">×</button>
-      <h2>个人入口</h2>
-      <div class="history-list">
-        <button data-view-link="subjects" data-close-drawer><strong>学科空间</strong><span>继续最近的 C++ 学习</span></button>
-        <button data-view-link="library" data-close-drawer><strong>资料库</strong><span>查看公共资料和我的投稿</span></button>
-      </div>
-    </aside>
-
-    <div class="toast" role="status" aria-live="polite"></div>
-    <script src="./app.js?v=9"></script>
+    <dialog data-subject-dialog aria-labelledby="add-subject-title"><form data-subject-form><h2 id="add-subject-title">添加学科</h2><label for="subject-name">学科名称</label><input id="subject-name" name="name" maxlength="256" required /><p data-create-subject-error role="alert" hidden></p><div class="r1-dialog-actions"><button type="button" data-close-dialog>取消</button><button class="r1-button" type="submit">创建学科</button></div></form></dialog>
+    <dialog data-subject-icon-dialog aria-labelledby="icon-picker-title"><h2 id="icon-picker-title" data-icon-subject-name>更换图标</h2><p class="local-note">图标仅保留在本页会话，刷新后恢复默认。</p><div class="r1-icon-choices" data-icon-choices></div><div class="r1-dialog-actions"><button type="button" data-close-dialog>取消</button></div></dialog>
+    <dialog data-future-dialog aria-labelledby="future-title"><h2 id="future-title">现状</h2><p>Subject State 尚未接入。本阶段发送消息不会修改现状。</p><button data-close-dialog>关闭</button></dialog>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>

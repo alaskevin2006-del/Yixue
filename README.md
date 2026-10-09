@@ -39,11 +39,11 @@ http://127.0.0.1:3000
 
 - 学科空间图标网格与搜索
 - 紧凑的 `‹ C++` 学科身份
-- 桌面 in-flow Conversation sidebar
-- 移动端 Conversation drawer
+- 桌面按需打开的 Conversation 记录面板
+- 移动端 Conversation 记录抽屉
 - 学习 ↔ 回顾的信息流
 - 用户 / 逸学消息视觉层级
-- 私人资料与显式「用于当前学习」
+- 私人资料与显式「设为本次参考」
 - Subject State 的查看 / 编辑 / 采用边界
 
 ## 当前边界

@@ -49,10 +49,52 @@
           <div class="time-row"><span>22:00</span><div></div></div>
         </div>
 
-        <form class="bottom-composer" data-home-form><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8z"></path><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8z"></path></svg><input disabled aria-label="行动辅助输入" placeholder="行动辅助尚未接入；请在学科空间保存学习消息" /><button type="submit" disabled aria-label="发送"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M6 11l6-6 6 6"></path></svg></button></form>
+        <div class="assistant-thread" data-home-thread aria-live="polite" hidden></div>
+        <form class="bottom-composer" data-home-form><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8z"></path><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8z"></path></svg><input data-home-input aria-label="行动辅助输入" placeholder="说说今天的变化或想推进的学习…" /><button type="submit" aria-label="发送"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M6 11l6-6 6 6"></path></svg></button></form>
       </section>
 
-      <section class="view" id="library-view" aria-labelledby="library-title"><div class="page-heading"><h1 id="library-title">资料库</h1></div><p class="local-note">资料服务尚未接入本地后端。本阶段不会上传、解析或自动引用资料。</p></section>
+      <section class="view" id="library-view" aria-labelledby="library-title">
+        <div class="library-shell">
+          <div class="library-top">
+            <h1 id="library-title">资料库</h1>
+            <label class="library-search">
+              <span aria-hidden="true">⌕</span>
+              <input data-library-search type="search" placeholder="搜索课程或资料…" aria-label="搜索课程或资料" />
+            </label>
+          </div>
+
+          <nav class="library-tabs" aria-label="资料库页面">
+            <button class="active" data-library-tab="public" type="button">公共资料</button>
+            <button data-library-tab="submission" type="button">我要投稿</button>
+          </nav>
+
+          <section data-library-panel="public" aria-labelledby="public-resources-title">
+            <div class="library-section-head">
+              <h2 id="public-resources-title">公共资料</h2>
+              <p>按实际课程组织，类型和年份只作为辅助判断。</p>
+            </div>
+            <div class="library-course-list" data-library-course-list></div>
+            <section class="library-course-detail" data-library-course-detail aria-live="polite"></section>
+          </section>
+
+          <section data-library-panel="submission" hidden aria-labelledby="submission-title">
+            <div class="library-section-head">
+              <h2 id="submission-title">我要投稿</h2>
+              <p>投稿与公共资料独立；审核通过后才会生成新的公共资料。</p>
+            </div>
+            <div class="submission-list flat" data-submission-list></div>
+            <div class="upload-zone library-upload">
+              <div>
+                <strong>选择一份资料</strong>
+                <span>这里只演示选择与待提交状态，不上传文件。</span>
+                <input data-submission-file type="file" hidden />
+                <button data-pick-submission type="button">选择文件</button>
+              </div>
+            </div>
+            <p class="local-note" data-submission-status role="status"></p>
+          </section>
+        </div>
+      </section>
       <section class="view" id="subjects-view" aria-label="学科空间">
       <div class="r1-error" data-api-error role="alert" hidden></div>
         <section data-subject-index>
@@ -66,23 +108,22 @@
           <div class="r1-subject-heading">
             <button class="r1-subject-back" data-subject-home aria-label="返回学科空间">‹</button>
             <h1 data-current-subject></h1>
-            <button class="r1-nav-toggle" data-nav-toggle aria-label="收起对话导航" aria-expanded="true" aria-controls="conversation-navigation">☰ 对话</button>
-            <button class="text-link" data-future-state>现状</button>
+            <button class="r1-nav-toggle" data-nav-toggle aria-label="展开对话列表" aria-expanded="false" aria-controls="conversation-navigation">☰ 对话</button>
           </div>
           <nav class="r1-tabs" aria-label="学科页面"><button class="active" data-subject-tab="learn">学习</button><button data-subject-tab="review">回顾</button><button data-subject-tab="files">资料</button></nav>
           <div class="r1-learning" data-workspace-shell>
-            <button class="r1-nav-scrim" data-nav-scrim aria-label="关闭对话导航遮罩" hidden></button>
-            <aside id="conversation-navigation" class="r1-conversation-nav" data-conversation-nav aria-label="对话导航"><div class="r1-nav-heading"><strong>对话</strong><button class="text-link" data-nav-close aria-label="关闭对话导航">×</button></div><button class="r1-button r1-new-chat" data-new-conversation>+ 新对话</button><p data-conversation-loading role="status" hidden>正在读取对话…</p><div data-conversation-list></div></aside>
+            <button class="r1-nav-scrim" data-nav-scrim aria-label="关闭对话列表遮罩" hidden></button>
+            <aside id="conversation-navigation" class="r1-conversation-nav" data-conversation-nav aria-label="对话列表" hidden><div class="r1-nav-heading"><strong>对话</strong><button class="text-link" data-nav-close aria-label="关闭对话列表">×</button></div><button class="r1-button r1-new-chat" data-new-conversation>+ 新对话</button><p data-conversation-loading role="status" hidden>正在读取对话…</p><div data-conversation-list></div></aside>
             <div class="r1-task-region">
             <section class="active r1-current-workspace" data-subject-panel="learn" aria-label="当前对话工作区">
-              <header class="r1-conversation-heading"><div><h2 data-current-conversation>选择或新建对话</h2><p data-message-target class="local-note">尚未选择对话</p></div><div class="r1-chat-actions"><button class="text-link" data-review-current hidden>回顾这次学习</button><button class="text-link r1-delete" data-delete-conversation disabled aria-label="删除当前对话">删除</button></div></header>
+              <header class="r1-conversation-heading"><div><h2 data-current-conversation>选择或新建对话</h2><p data-message-target class="local-note">尚未选择对话</p></div><div class="r1-chat-actions"><button class="text-link" data-review-current hidden>总结这次学习</button><button class="text-link r1-delete" data-delete-conversation disabled aria-label="删除当前对话">删除</button></div></header>
               <p data-message-loading role="status" hidden>正在读取消息…</p>
               <div class="r1-messages" data-messages aria-live="polite"></div>
               <form class="r1-composer" data-message-form><label class="sr-only" for="message-input">学习输入</label><textarea id="message-input" data-message-input rows="3" placeholder="在当前对话中写下问题…" disabled></textarea><button class="r1-button" data-send-message type="submit" aria-label="发送消息" disabled>发送</button></form>
               <p data-save-status class="local-note" role="status"></p><p data-model-status class="local-note">本地开发阶段未接入 AI；这里只保存用户消息。</p>
             </section>
-          <section data-subject-panel="review" hidden><h2>回顾</h2><p>回顾与记忆服务尚未接入。当前对话不会自动成为复盘证据或学习记忆。</p></section>
-          <section data-subject-panel="files" hidden><h2>资料</h2><p>资料服务尚未接入。没有资料被自动用于当前学习。</p></section>
+          <section data-subject-panel="review" hidden><h2>回顾</h2><p>回顾与记忆服务尚未接入。当前对话只作为原始对话保存，不会自动成为复盘证据或学习记忆。</p></section>
+          <section data-subject-panel="files" hidden><h2>资料</h2><p>资料服务尚未接入。没有资料会自动进入当前对话；之后应由用户明确设为本次参考。</p></section>
             </div>
           </div>
         </section>
@@ -90,7 +131,30 @@
     </main>
     <dialog data-subject-dialog aria-labelledby="add-subject-title"><form data-subject-form><h2 id="add-subject-title">添加学科</h2><label for="subject-name">学科名称</label><input id="subject-name" name="name" maxlength="256" required /><p data-create-subject-error role="alert" hidden></p><div class="r1-dialog-actions"><button type="button" data-close-dialog>取消</button><button class="r1-button" type="submit">创建学科</button></div></form></dialog>
     <dialog data-subject-icon-dialog aria-labelledby="icon-picker-title"><h2 id="icon-picker-title" data-icon-subject-name>更换图标</h2><p class="local-note">图标仅保留在本页会话，刷新后恢复默认。</p><div class="r1-icon-choices" data-icon-choices></div><div class="r1-dialog-actions"><button type="button" data-close-dialog>取消</button></div></dialog>
-    <dialog data-future-dialog aria-labelledby="future-title"><h2 id="future-title">现状</h2><p>Subject State 尚未接入。本阶段发送消息不会修改现状。</p><button data-close-dialog>关闭</button></dialog>
+    <dialog class="state-planner-dialog" data-future-dialog aria-labelledby="future-title">
+      <header class="state-planner-head">
+        <div>
+          <h2 id="future-title">现状与排程</h2>
+          <p class="local-note">AI 可以参考现状给出安排；日程采用后只进入本页示例日历，不自动改写学科现状。</p>
+        </div>
+        <button class="text-link" data-close-dialog type="button" aria-label="关闭现状">×</button>
+      </header>
+      <div class="state-planner-body">
+        <section class="state-planner-state" aria-label="学科现状">
+          <div class="state-subject-list" data-planner-subjects></div>
+          <div data-planner-state-view></div>
+        </section>
+        <section class="state-planner-chat" aria-label="规划对话">
+          <div class="planner-chat-scroll" data-planner-messages></div>
+          <div data-planner-plan></div>
+          <form class="planner-composer" data-planner-form>
+            <label class="sr-only" for="planner-input">规划输入</label>
+            <textarea id="planner-input" data-planner-input rows="3" placeholder="例如：今晚班会后还有一小时，帮我排一下 C++ 和高数。"></textarea>
+            <button class="r1-button" type="submit">规划</button>
+          </form>
+        </section>
+      </div>
+    </dialog>
     <script type="module" src="./app.js"></script>
   </body>
 </html>

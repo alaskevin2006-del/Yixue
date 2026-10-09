@@ -4,6 +4,11 @@ export const scenario = {
   subjects: [
     { id: 'demo-cpp', name: 'C++' },
     { id: 'demo-math', name: '高等数学' },
+    { id: 'demo-ds', name: '数据结构' },
+    { id: 'demo-os', name: '操作系统' },
+    { id: 'demo-probability', name: '概率论' },
+    { id: 'demo-english', name: '大学英语' },
+    { id: 'demo-software', name: '软件工程' },
   ],
   conversations: [
     { id: 'cpp-erase', subject_space_id: 'demo-cpp', title: 'vector erase 后 iterator 为什么失效？', updated_at: '2026-10-01T14:20:00+08:00', kind: 'learning' },
@@ -30,6 +35,11 @@ export const scenario = {
   states: {
     'demo-cpp': '最近在学习 STL 容器、模板和多态。能说明 vector::erase 的失效范围，循环删除时 iterator 的更新方式还需要结合代码确认。模板的非推导上下文是下一次想继续看的问题。',
     'demo-math': '尚未整理当前学科的学习现状。',
+    'demo-ds': '数据结构正在复习树和图。二叉树遍历比较熟，最短路径和拓扑排序还需要用题目巩固。',
+    'demo-os': '操作系统刚开始看进程与线程。概念能跟上，但同步互斥还没有形成稳定理解。',
+    'demo-probability': '概率论最近在做条件概率和随机变量。公式能套用，但题目条件转换容易漏。',
+    'demo-english': '大学英语主要准备本周阅读与听力。长句理解还可以，听力细节记录不够稳定。',
+    'demo-software': '软件工程小组作业需要整理需求边界。个人部分已经有草稿，还缺一次与组员对齐。',
   },
   memory: [
     { id: 'template-deduction', subjectId: 'demo-cpp', title: '非推导上下文', content: '嵌套类型不能反推出 T，想继续比较显式模板参数与可推导参数的写法。', active: true, sourceIds: ['cpp-template'] },
@@ -47,7 +57,7 @@ export function recapFixture(sourceIds) {
       ? '你已经解释清楚失效范围。再对照循环的两个分支：删除时接住 erase 的返回值，未删除时才递增。下一步可以自己写出连续删除两个相邻元素的过程。'
       : template ? '这次可以对照两种写法：显式指定 T，以及让参数直接包含可推导的 T。重点是辨认哪里属于非推导上下文。'
         : virtual ? '这次可以从 delete Base* 的调用顺序检查虚析构的作用，再比较没有多态删除的情况。'
-          : '本次没有选择学习记录。可以先写下你想回顾的问题；这组演示没有为它预设学习点候选。',
+          : '本次没有选择参考对话。可以先写下你想回顾的问题；这组演示没有为它预设学习点候选。',
     candidates: erase ? [
       { id: 'iterator-loop', title: '循环删除时的迭代器更新', content: '你已经理解 erase 的失效范围，但循环删除时 iterator 的更新方式仍容易混淆。删除分支接住返回值，未删除分支才递增。', active: true, evidence: '原对话仍在询问循环删除的更新方式。', sourceIds: ['cpp-erase'] },
       { id: 'iterator-rule', title: '迭代器失效范围', content: '已理解失效范围：erase 会使被删位置及之后的 iterator 失效。', active: false, evidence: '原对话明确说“失效范围我懂了”，本次没有新的待解决问题。', sourceIds: ['cpp-erase'] },

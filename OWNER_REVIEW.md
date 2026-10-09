@@ -8,7 +8,7 @@ Focus on product structure and information flow rather than production deploymen
 
 1. Subject Space icon-grid overview and search.
 2. Compact subject identity/header (`‹ C++`).
-3. Desktop in-flow Conversation sidebar and mobile Conversation drawer.
+3. On-demand Conversation record panel on desktop and mobile.
 4. Learning ↔ Review flow and Conversation source selection.
 5. Learning/Review message surfaces and private-resource presentation.
 6. Subject State interaction.

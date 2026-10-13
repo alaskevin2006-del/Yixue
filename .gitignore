@@ -8,3 +8,10 @@ Thumbs.db
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+.env
+.env.*
+!.env.example
+deploy-data/
+backups/
+playwright-report/
+test-results/

@@ -1,0 +1,9 @@
+[Unit]
+Description=Renew Yixue public IP TLS certificate and reload proxy
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/yixue
+ExecStart=/bin/bash /opt/yixue/deploy/ip-certificate.sh renew

@@ -1,0 +1,7 @@
+# Combine with compose.yaml after obtaining the initial IP certificate.
+services:
+  web:
+    volumes:
+      - ./deploy/Caddyfile.ip:/etc/caddy/Caddyfile:ro
+      - ./deploy-data/certificates:/certs:ro
+      - ./deploy-data/acme:/acme:ro

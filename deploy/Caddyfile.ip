@@ -1,0 +1,22 @@
+{
+    auto_https disable_redirects
+}
+
+http://{$SITE_ADDRESS} {
+    handle /.well-known/acme-challenge/* {
+        root * /acme
+        file_server
+    }
+    handle {
+        redir https://{$SITE_ADDRESS}{uri} 308
+    }
+}
+
+https://{$SITE_ADDRESS} {
+    tls /certs/live/yixue-ip/fullchain.pem /certs/live/yixue-ip/privkey.pem
+    encode zstd gzip
+    request_body {
+        max_size 22MB
+    }
+    reverse_proxy app:3000
+}

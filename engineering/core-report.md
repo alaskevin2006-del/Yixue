@@ -1,0 +1,28 @@
+# Core implementation report
+
+Completed core/auth/AI production implementation in the approved worktree. Product definitions in docs are unchanged. The production path uses real cookie sessions and SQLite; the old explicit development identity path remains isolated and is refused when NODE_ENV=production.
+
+## Delivered
+
+- `Store` provides synchronous SQL operations and atomic synchronous transactions; WAL, full synchronous durability, foreign keys, disk-path creation and future-schema rejection. Legacy user_principals, subjects, conversations, user messages and message_requests survive migration; original data never implicitly becomes a new authenticated account.
+- Environment-bootstrap administrator with no default password; administrator account provisioning and reset; self password changes; salted scrypt password hashes; random opaque session tokens stored only as hashes. Password changes/resets revoke all relevant sessions. Pending login/password-change requests revalidate after asynchronous hashing so they cannot resurrect revoked credentials or overwrite a later reset.
+- HttpOnly SameSite=Strict sessions, Secure cookies on HTTPS, CSRF header enforcement on authenticated mutations including uploads, exact Origin checking, same-origin browser protections, 64KiB object-only JSON parsing, login rate limits, safe request IDs and structured logs without message contents/provider secrets.
+- Authenticated subjects/icon persistence, conversations, exact original user messages and real assistant messages, request idempotency, queryable AI runs, reload/restart recovery, per-conversation serialization and bounded concurrent work. A failed run never fabricates assistant content; retry never duplicates the user message. Deletion removes raw messages, request records and runs; a generic conversation tombstone supports independent confirmed source availability. Late AI results cannot recreate deleted content.
+- Independent review regressions are fixed: a delayed POST body cannot recreate raw text after deletion because access is checked again after body parsing and inside the write transaction. Current input and explicit evidence receive context capacity before history. Learning entries are atomic; only delivered source/memory entries reach durable provenance, and omitted evidence is marked. First messages replace only the 新对话 placeholder with a 36-character title; chosen titles remain.
+- Server-side OpenAI-compatible chat adapter, bounded retry for transient provider failures, request timeout/cancellation, bounded response parsing and output validation, declared vision capability. Missing configuration is explicit. Stable system rules stay separate from dynamic resource/learning evidence.
+- Runtime initializes resources and continuity, reads explicit per-conversation resources and relevant/explicit memory/review context outside transactions, and records actual review source provenance atomically with successful answers. Exported `startApplication(config,{ai?})` enables real HTTP integration checks without CLI side effects.
+- Core section of engineering/API.md describes final routes, security headers, run states and input limits.
+
+## Verification
+
+Fresh Node 24.21.0 run after independent review and provider settings: `npx --yes node@24 --test --test-concurrency=1 tests/backend/*.test.js` — 62 tests, 62 pass, 0 fail/skip. Core contributes 26 behavioral tests across core-ai, core-auth-race, core-config, core-http, core-start and core-store, plus the shared independent-review reproductions. They use real SQLite and HTTP/provider endpoints; only external AI content is substituted. Test-first failures were observed before introducing the corresponding behavior.
+
+Checks cover legacy migration, rollback, future-schema protection, tenant isolation, forged dev identity rejection, CSRF/Origin, password/reset/session lifecycle and expiry, pending-auth reset races, rate limits, exact whitespace/Unicode preservation, idempotency, failure/retry, restart recovery, deletion races, bounded context/history, captured review provenance and runtime feature integration. Full backend checks also cover resources, continuity, backup/restore and production static serving.
+
+## Deployment inputs and limits
+
+Production needs NODE_ENV=production and HTTPS YIXUE_ORIGIN; YIXUE_DB_PATH and YIXUE_UPLOADS_DIR locate durable data. First administrator needs YIXUE_ADMIN_USERNAME and YIXUE_ADMIN_PASSWORD. Configure AI through YIXUE_AI_BASE_URL, YIXUE_AI_API_KEY and YIXUE_AI_MODEL; set YIXUE_AI_VISION=true only for a model that supports image input. Optional YIXUE_AI_THINKING accepts only disabled|enabled, emits thinking:{type:...} only when explicitly set, and is verified against the actual local HTTP adapter payload. No real credentials were added to the repository.
+
+Real external AI acceptance, actual deployment/HTTPS and browser acceptance remain root-owned and are not claimed by this report. Provider contract tests use a real local HTTP provider fixture rather than a live external account. Login rate windows are process-local and reset on restart; this implementation is intended for one backend process with local SQLite. Runtime production API does not trust X-Yixue-Dev-User. Node24 is the deployment runtime; the initial Store/core verification also ran on available Node22 with its experimental SQLite warning.
+
+Latest user instruction accepts official DeepSeek configuration with an API-key placeholder and does not require a live model call before morning delivery. This authorization does not imply that live provider operation has been tested successfully; an empty key keeps AI explicitly unconfigured until the user supplies it.

@@ -1,0 +1,25 @@
+# Execution ledger — plan: engineering/overnight-plan.md
+
+2026-10-13: User approved complete plan and autonomous execution/deployment. Created managed worktree C:/Users/Kevin/.codex/worktrees/yixue-ready/逸学 on codex/yixue-ready. Original main checkout clean, baseline preserved.
+
+Environment: initial SSH TCP connection to supplied server port 22 timed out before authentication. Investigate transport while independent development continues. No credential persisted.
+
+Ruling: disjoint-file parallel implementation per user-approved plan; root owns shared integration. Preserve product docs. Full-privilege access does not require repeated approval of already-authorized server/code work.
+
+2026-10-13 23:40 +08: Core/auth/AI/store, resources/extraction, continuity and frontend implemented and wired. Node24.21.0 available via npx; dependencies installed. Latest independent backend run: 50 existing pass, 3 new review repros fail. Root fixed migrated review INSERT and verified green; bounded continuity evidence/provenance regression also green (10 continuity tests). Core worker fixing delayed-body deletion race and evidence budgeting; do not claim complete until rerun. Reports: engineering/core-report.md, resources-report.md, backend-review.md.
+
+Frontend is running real server/SQLite browser acceptance with Edge and an explicitly injected test-only AI adapter. Initial desktop login/chat/retry and mobile390/320 pass; remaining resource/continuity/admin flows still under verification. Screenshot artifacts in ignored test-results/frontend. No live external model validation yet.
+
+Root prepared Docker/Compose/Caddy config, environment template, offline SHA256 DB+file backup/restore utility and tests, safe static serving tests, preserved standalone historical demo. Docker is unavailable locally, so container deployment has not been certified. No remote deployment or credentials saved. SSH port22 still times out before authentication; 80/443 refused in previous probe. Pending user network/port and model configuration details. Continue independent work.
+
+Heartbeat automation id automation is ACTIVE every30min in this thread, continuing this ledger and plan without duplicating active owners; stop on verified delivery or deadline. Deadline 2026-10-14 08:00 Asia/Shanghai.
+
+Next: resolve/re-review core findings, complete browser scenarios and inspect screenshots, package and runtime smoke, retry remote access when useful, configure real model and HTTPS, actual backup/restore and server restart acceptance. Changes remain uncommitted on codex/yixue-ready; original main is preserved.
+
+2026-10-13 user steering: use official DeepSeek and leave an API-key configuration slot; real paid model call is no longer a precondition for delivery. Official current model deepseek-flash accepts images; base https://api.deepseek.com. Environment template now preconfigures base/model/vision with empty key and explicit non-thinking mode. Core adding thinking payload contract test. This is integration readiness, not a claim of real AI quality verification. Deployment remains required; SSH transport still unresolved.
+
+2026-10-13 23:55 +08: `npm test` executed through Node24: 82/82 pass (64 backend +18 frontend including12 browser scenarios). Independent backend review closed4 confirmed findings and verified actual file+extracted-content backup/restore and tenant denial. Core DeepSeek thinking payload tests complete. Frontend independent review still ongoing, investigating whitespace preservation and preview-switch races; do not finalize until review closes.
+
+Actual local entrypoint now running hidden at http://127.0.0.1:3000, process id in ignored .data/local-server.pid, logs .data/local-server*.log. Generated independent app admin password lives only in ignored .env (not SSH password); no model key stored. Health, actual admin login/session/logout and static page verified. Original main checkout not modified. Node executable C:/Users/Kevin/AppData/Local/npm-cache/_npx/387698761821791d/node_modules/node/bin/node.exe. Caddy image digest pinned from official Docker Hub; Node24.21.0 image tag confirmed active. Local Docker and remote HTTPS still unverified.
+
+Final local verification: full `npm test` under Node24.21.0 =>87/87,0fail/skip; both independent reviewers closed all findings. Frontend raw-code, stale-preview and stale-CSRF bugs fixed and regression-tested. IP-only HTTPS config + Certbot/systemd renewal prepared; `caddy reload --force` required for renewed manual certificate and included after review. Bash syntax check passed. See engineering/acceptance.md for exact local acceptance and required remote steps. Code snapshot ready for commit/package. SSH latest probe still times out before authentication; do not repeatedly rerun green tests unless code changes. Next meaningful task is actual server connectivity/deployment.

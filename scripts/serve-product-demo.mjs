@@ -7,8 +7,8 @@ if (process.env.NODE_ENV === 'production') throw new Error('PRODUCT_DEMO_DEV_ONL
 const port = Number(process.env.YIXUE_DEMO_PORT ?? 3001);
 const root = new URL('../', import.meta.url);
 const files = new Map([
-  ['/', ['dist/index.html', 'text/html']], ['/index.html', ['dist/index.html', 'text/html']],
-  ['/app.js', ['dist/app.js', 'text/javascript']], ['/styles.css', ['dist/styles.css', 'text/css']],
+  ['/', ['demo/legacy-index.html', 'text/html']], ['/index.html', ['demo/legacy-index.html', 'text/html']],
+  ['/app.js', ['demo/legacy-app.js', 'text/javascript']], ['/styles.css', ['demo/legacy-styles.css', 'text/css']],
   ...['workspace.js', 'data-source.js', 'scenario.js', 'product.css'].map(name => [`/demo/${name}`, [`demo/${name}`, name.endsWith('.css') ? 'text/css' : 'text/javascript']]),
 ]);
 const server = createServer(async (request, response) => {

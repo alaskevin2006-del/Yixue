@@ -1,5 +1,7 @@
 # 实施进度 · implementation-plan.md
 
+> 后续基础服务已于2026-10-14 18:03发布到正式站；最新进度见[infrastructure-plan.md](infrastructure-plan.md)，验收见[infrastructure-acceptance.md](infrastructure-acceptance.md)。以下为上午原型阶段历史。
+
 - 10:04 建立分支 codex/user-prototype-review，基线 9fa6998。
 - 基线 build 通过；原 test:backend 实际运行0项测试，不能作为有效验证；原项目未附带e2e测试文件。
 - 已设置每30分钟在当前聊天自检，截止北京时间2026-10-14 12:00。

@@ -212,7 +212,7 @@ def stage(remote, args, revision, stamp):
         remote.sftp.remove(stage_receipt)
     try:
         remote.put(BASE + '/compose.test.yaml', template)
-        remote.run('mkdir -p ' + q(BASE + '/deploy-data/test/uploads') + ' && sudo chown -R 1000:1000 ' + q(BASE + '/deploy-data/test') + ' && sudo chmod 700 ' + q(BASE + '/deploy-data/test'))
+        remote.run('sudo -n mkdir -p ' + q(BASE + '/deploy-data/test/uploads') + ' && sudo -n chown -R 1000:1000 ' + q(BASE + '/deploy-data/test') + ' && sudo -n chmod 700 ' + q(BASE + '/deploy-data/test'))
         cmd = compose(BASE_FILES + ['compose.test.yaml'])
         if previous_test_image:
             remote.run(cmd + ' stop test')

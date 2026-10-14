@@ -1,5 +1,7 @@
 # 验收说明 · 用户端交互原型
 
+> 本文保留上午静态原型阶段的历史验收。2026-10-14 18:03已按后续授权发布完整服务，最新入口、权限、文件保存和限制见[infrastructure-acceptance.md](infrastructure-acceptance.md)。根站现已更新；/preview/仍是旧原型。
+
 验收目标：2026-10-14 12:00（北京时间）。
 分支：codex/user-prototype-review。基线：main / 9fa6998。
 服务器验收入口：https://124.221.230.69/preview/

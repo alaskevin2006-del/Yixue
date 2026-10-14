@@ -180,7 +180,7 @@ export async function handleContinuity(ctx) {
     if(method==='PATCH'&&!match[2]) {
       const body=await input(); const expected=version(body.version);
       const title=body.title===undefined?row.title:text(body.title,160);
-      const content=body.content===undefined?row.content:text(body.content,6000);
+      const content=body.content===undefined?row.content:text(body.content,50000);
       const status=body.status??row.status;if(!['active','inactive'].includes(status)) fail(400,'INVALID_STATUS','记忆状态无效。');
       return store.transaction(()=>{
         if(memoryRow(store,principal,id).version!==expected) fail(409,'VERSION_CONFLICT','学习记忆已变化，请刷新后重试。');

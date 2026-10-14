@@ -1,10 +1,12 @@
+import {initAudit,audit} from './audit.js';
 import { randomUUID } from 'node:crypto';
 import { HttpError } from './errors.js';
 import { initStorage, readUpload, saveFile, copyStoredFile, removeFile, removeFileSync, safeFile } from './resource-files.js';
 import { extractResource } from './resource-extract.js';
+import {withUploadQuota} from './quota.js';
 
 export function initResources(store,config={}) {
-  initStorage(config);
+  initStorage(config); initAudit(store);
   store.db.exec(`
     CREATE TABLE IF NOT EXISTS resource_courses(id TEXT PRIMARY KEY,name TEXT NOT NULL UNIQUE,created_at TEXT NOT NULL) STRICT;
     CREATE TABLE IF NOT EXISTS resources(
@@ -25,8 +27,11 @@ export function initResources(store,config={}) {
       public_resource_id TEXT,note TEXT,reviewed_by TEXT,reviewed_at TEXT,created_at TEXT NOT NULL
     ) STRICT;
   `);
+  for(const [column,type] of [['description',"TEXT NOT NULL DEFAULT ''"],['deleted_at','TEXT']])if(!store.all('PRAGMA table_info(resource_submissions)').some(c=>c.name===column))store.db.exec('ALTER TABLE resource_submissions ADD COLUMN '+column+' '+type);
+  if(!store.all('PRAGMA table_info(resources)').some(c=>c.name==='archived_at'))store.db.exec('ALTER TABLE resources ADD COLUMN archived_at TEXT');
   store.db.exec(`INSERT OR IGNORE INTO private_resources SELECT id,owner_user_id,subject_id FROM resources WHERE scope='private';
     INSERT OR IGNORE INTO public_resources SELECT r.id,r.course_id,s.id FROM resources r LEFT JOIN resource_submissions s ON s.public_resource_id=r.id WHERE r.scope='public';`);
+  for(const row of store.all('SELECT storage_key FROM resource_submissions WHERE deleted_at IS NOT NULL'))if(row.storage_key)removeFileSync(config,row.storage_key);
   for(const row of store.all('SELECT id,storage_key FROM resources WHERE deleted_at IS NOT NULL')){
     store.run('DELETE FROM resource_pages WHERE resource_id=?',row.id);
     if(row.storage_key)removeFileSync(config,row.storage_key);
@@ -41,11 +46,11 @@ function admin(user){if(user.role!=='admin')throw new HttpError(403,'ADMIN_REQUI
 function label(value,fallback){const text=value===undefined?fallback:value;if(typeof text!=='string'||!text.trim()||text.trim().length>200||/[\x00-\x1f]/.test(text))throw new HttpError(400,'INVALID_NAME','名称需为1至200个字符');return text.trim();}
 function ownSubject(store,user,id){if(!store.get('SELECT id FROM subjects WHERE id=? AND owner_user_id=?',id,user.id))throw missing();}
 function ownConversation(store,user,id){if(!store.get('SELECT c.id FROM conversations c JOIN subjects s ON s.id=c.subject_space_id WHERE c.id=? AND c.deleted_at IS NULL AND s.owner_user_id=?',id,user.id))throw missing();}
-function accessible(row,user){return row && !row.deleted_at && (row.scope==='public'||row.owner_user_id===user.id);}
+function accessible(row,user){return row && !row.deleted_at && !row.archived_at && (row.scope==='public'||row.owner_user_id===user.id);}
 function resource(store,user,id){const row=store.get('SELECT * FROM resources WHERE id=?',id);if(!accessible(row,user))throw missing();return row;}
 function visible(row){if(!row)return null;const {storage_key,owner_user_id,deleted_at,...view}=row;return view;}
 function courseExists(store,id){if(typeof id!=='string'||!store.get('SELECT id FROM resource_courses WHERE id=?',id))throw new HttpError(400,'INVALID_COURSE','请选择已有课程');}
-function storeExtraction(store,id,data,merge=false){store.transaction(()=>{
+export function storeExtraction(store,id,data,merge=false){store.transaction(()=>{
   const row=store.get('SELECT * FROM resources WHERE id=? AND deleted_at IS NULL',id);if(!row)return;
   const pageCount=data.pageCount||row.page_count;
   const combined=new Map(merge?store.all('SELECT page,content FROM resource_pages WHERE resource_id=?',id).map(p=>[p.page,p.content]):[]);
@@ -58,7 +63,7 @@ function storeExtraction(store,id,data,merge=false){store.transaction(()=>{
   if(cut){status='partial';error='提取文字长度已达上限；不可视为读取全文';}
   store.run('UPDATE resources SET extraction_status=?,extraction_error=?,page_count=?,updated_at=? WHERE id=?',status,error,pageCount,now(),id);
 });}
-function insertResource(store,row){
+export function insertResource(store,row){
   store.run(`INSERT INTO resources(id,scope,owner_user_id,subject_id,course_id,name,original_name,mime,size,storage_key,extraction_status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,row.id,row.scope,row.owner_user_id,row.subject_id,row.course_id,row.name,row.original_name,row.mime,row.size,row.storage_key,'pending',row.created_at,row.created_at);
   if(row.scope==='private')store.run('INSERT INTO private_resources VALUES(?,?,?)',row.id,row.owner_user_id,row.subject_id);
   else store.run('INSERT INTO public_resources VALUES(?,?,?)',row.id,row.course_id,row.submission_id||null);
@@ -86,22 +91,24 @@ export async function handleResources(ctx) {
   const user=principal(ctx);const url=ctx.url || new URL(route,'http://local');
   if(route==='/api/courses'){
     if(method==='GET')return respond({courses:store.all('SELECT * FROM resource_courses ORDER BY name')});
-    if(method==='POST'){admin(user);const body=await ctx.body();const name=label(body.name);const existing=store.get('SELECT * FROM resource_courses WHERE name=?',name);if(existing)return respond({course:existing});const course={id:randomUUID(),name,created_at:now()};store.run('INSERT INTO resource_courses VALUES(?,?,?)',course.id,course.name,course.created_at);return respond({course},201);}
+    if(method==='POST'){admin(user);const body=await ctx.body();const name=label(body.name);const existing=store.get('SELECT * FROM resource_courses WHERE name=?',name);if(existing)return respond({course:existing});const course={id:randomUUID(),name,created_at:now()};store.transaction(()=>{store.run('INSERT INTO resource_courses VALUES(?,?,?)',course.id,course.name,course.created_at);audit(store,user,'course.create','course',course.id);});return respond({course},201);}
   }
   if(route==='/api/resources'){
     if(method==='GET'){
       const scope=url.searchParams.get('scope')||'private';if(!['private','public'].includes(scope))throw new HttpError(400,'INVALID_SCOPE','资料域无效');
       const subjectId=url.searchParams.get('subjectId');if(subjectId)ownSubject(store,user,subjectId);
       const courseId=url.searchParams.get('courseId');const q=(url.searchParams.get('q')||'').toLowerCase();
-      const rows=scope==='private'?store.all('SELECT * FROM resources WHERE scope=? AND owner_user_id=? AND deleted_at IS NULL ORDER BY created_at DESC',scope,user.id):store.all('SELECT * FROM resources WHERE scope=? AND deleted_at IS NULL ORDER BY created_at DESC',scope);
+      const rows=scope==='private'?store.all('SELECT * FROM resources WHERE scope=? AND owner_user_id=? AND deleted_at IS NULL ORDER BY created_at DESC',scope,user.id):store.all('SELECT * FROM resources WHERE scope=? AND deleted_at IS NULL AND archived_at IS NULL ORDER BY created_at DESC',scope);
       return respond({resources:rows.filter(r=>(!subjectId||r.subject_id===subjectId)&&(!courseId||r.course_id===courseId)&&(!q||r.name.toLowerCase().includes(q))).map(visible)});
     }
     if(method==='POST'){
       const upload=await readUpload(ctx.req,config);const subjectId=upload.fields.subjectId||null;if(subjectId)ownSubject(store,user,subjectId);
+      return withUploadQuota(store,config,user,upload.size,async()=>{
       const name=label(upload.fields.name,upload.originalName);const key=await saveFile(config,upload.bytes);
       const row={id:randomUUID(),scope:'private',owner_user_id:user.id,subject_id:subjectId,course_id:null,name,original_name:upload.originalName,mime:upload.mime,size:upload.size,storage_key:key,created_at:now()};
-      try{store.transaction(()=>insertResource(store,row));}catch(e){await removeFile(config,key);throw e;}
+      try{store.transaction(()=>{insertResource(store,row);if(ctx.importSourceKey)store.run('INSERT INTO browser_imports VALUES(?,?,?,?,?)',user.id,ctx.importSourceKey,'file',row.id,'file');});}catch(e){await removeFile(config,key);throw e;}
       storeExtraction(store,row.id,await extractResource(row,config,ctx.ai));return respond({resource:visible(resource(store,user,row.id))},201);
+      });
     }
   }
   const refMatch=route.match(/^\/api\/conversations\/([^/]+)\/references$/);
@@ -125,7 +132,7 @@ export async function handleResources(ctx) {
       if(row.scope==='public')admin(user);const body=await ctx.body();const [startPage,endPage]=range(body.startPage,body.endPage,row.page_count);
       if(startPage!==null||endPage!==null){if(row.mime!=='application/pdf')throw new HttpError(400,'PAGE_EXTRACTION_PDF_ONLY','指定页段提取仅适用于PDF');if((endPage||row.page_count)-(startPage||1)>19)throw new HttpError(400,'EXTRACTION_RANGE_TOO_LARGE','每次指定提取最多20页');}
       const selected=startPage!==null||endPage!==null;
-      storeExtraction(store,id,await extractResource(row,config,ctx.ai,{startPage:startPage||undefined,endPage:endPage||undefined}),selected);return respond({resource:visible(resource(store,user,id))});
+      storeExtraction(store,id,await extractResource(row,config,ctx.ai,{startPage:startPage||undefined,endPage:endPage||undefined}),selected);if(row.scope==='public')audit(store,user,'public.extract','resource',id);return respond({resource:visible(resource(store,user,id))});
     }
     if(!action&&method==='GET')return respond({resource:visible(row)});
     if(!action&&method==='PATCH'){
@@ -135,33 +142,43 @@ export async function handleResources(ctx) {
       store.transaction(()=>{store.run('UPDATE resources SET name=?,subject_id=?,updated_at=? WHERE id=?',name,subjectId,now(),id);store.run('UPDATE private_resources SET subject_id=? WHERE resource_id=?',subjectId,id);});return respond({resource:visible(resource(store,user,id))});
     }
     if(!action&&method==='DELETE'){
-      if(row.scope==='public')admin(user);try{safeFile(config,row.storage_key);}catch(e){if(e.code!=='FILE_UNAVAILABLE')throw e;}
+      if(row.scope==='public'){admin(user);store.transaction(()=>{store.run('UPDATE resources SET archived_at=?,updated_at=? WHERE id=?',now(),now(),id);audit(store,user,'public.archive','resource',id);});return {status:204};}try{safeFile(config,row.storage_key);}catch(e){if(e.code!=='FILE_UNAVAILABLE')throw e;}
       store.transaction(()=>{store.run('DELETE FROM resource_pages WHERE resource_id=?',id);store.run('UPDATE resources SET deleted_at=?,extraction_status=?,extraction_error=NULL,page_count=0,updated_at=? WHERE id=?',now(),'unavailable',now(),id);});
       await removeFile(config,row.storage_key);store.run('UPDATE resources SET storage_key=NULL WHERE id=?',id);return {status:204};
     }
   }
   if(route==='/api/submissions'){
-    if(method==='GET')return respond({submissions:(user.role==='admin'?store.all('SELECT * FROM resource_submissions ORDER BY created_at DESC'):store.all('SELECT * FROM resource_submissions WHERE owner_user_id=? ORDER BY created_at DESC',user.id)).map(visible)});
+    if(method==='GET'){if(user.role==='admin')audit(store,user,'submission.list','submissions','all');return respond({submissions:(user.role==='admin'?store.all('SELECT * FROM resource_submissions WHERE deleted_at IS NULL ORDER BY created_at DESC'):store.all('SELECT * FROM resource_submissions WHERE owner_user_id=? AND deleted_at IS NULL ORDER BY created_at DESC',user.id)).map(visible)});}
     if(method==='POST'){
-      const upload=await readUpload(ctx.req,config);courseExists(store,upload.fields.courseId);const name=label(upload.fields.name,upload.originalName);const key=await saveFile(config,upload.bytes);
-      const id=randomUUID();try{store.run('INSERT INTO resource_submissions(id,owner_user_id,course_id,name,original_name,mime,size,storage_key,created_at) VALUES(?,?,?,?,?,?,?,?,?)',id,user.id,upload.fields.courseId,name,upload.originalName,upload.mime,upload.size,key,now());}catch(e){await removeFile(config,key);throw e;}
+      const upload=await readUpload(ctx.req,config);courseExists(store,upload.fields.courseId);
+      return withUploadQuota(store,config,user,upload.size,async()=>{const name=label(upload.fields.name,upload.originalName);const key=await saveFile(config,upload.bytes);
+      const id=randomUUID();try{store.transaction(()=>{store.run('INSERT INTO resource_submissions(id,owner_user_id,course_id,name,original_name,mime,size,storage_key,created_at,description) VALUES(?,?,?,?,?,?,?,?,?,?)',id,user.id,upload.fields.courseId,name,upload.originalName,upload.mime,upload.size,key,now(),upload.fields.description||'');if(ctx.importSourceKey)store.run('INSERT INTO browser_imports VALUES(?,?,?,?,?)',user.id,ctx.importSourceKey,'file',id,'file');});}catch(e){await removeFile(config,key);throw e;}
       return respond({submission:visible(store.get('SELECT * FROM resource_submissions WHERE id=?',id))},201);
+      });
     }
   }
+  const withdrawal=route.match(/^\/api\/submissions\/([^/]+)$/);
+  if(withdrawal&&method==='DELETE'){
+    const sub=store.get('SELECT * FROM resource_submissions WHERE id=? AND owner_user_id=? AND deleted_at IS NULL',withdrawal[1],user.id);if(!sub)throw missing();
+    store.run('UPDATE resource_submissions SET deleted_at=? WHERE id=?',now(),sub.id);
+    await removeFile(config,sub.storage_key);return {status:204};
+  }
   const subMatch=route.match(/^\/api\/submissions\/([^/]+)\/(download|review)$/);
-  if(subMatch){const [,id,action]=subMatch;const sub=store.get('SELECT * FROM resource_submissions WHERE id=?',id);if(!sub || (sub.owner_user_id!==user.id&&user.role!=='admin'))throw missing();
-    if(method==='GET'&&action==='download')return {status:200,file:{path:safeFile(config,sub.storage_key),name:sub.original_name,mime:sub.mime,inline:false}};
+  if(subMatch){const [,id,action]=subMatch;const sub=store.get('SELECT * FROM resource_submissions WHERE id=?',id);if(!sub || sub.deleted_at || (sub.owner_user_id!==user.id&&user.role!=='admin'))throw missing();
+    if(method==='GET'&&action==='download'){const file={path:safeFile(config,sub.storage_key),name:sub.original_name,mime:sub.mime,inline:false};if(user.role==='admin')audit(store,user,'submission.download','submission',id);return {status:200,file};}
     if(method==='POST'&&action==='review'){
       admin(user);const body=await ctx.body();if(!['accept','reject'].includes(body.decision))throw new HttpError(400,'INVALID_DECISION','审核决定无效');
       const status=body.decision==='accept'?'accepted':'rejected';if(body.note!==undefined && (typeof body.note!=='string'||body.note.length>2000))throw new HttpError(400,'INVALID_NOTE','审核说明过长');
       const reviewResult=()=>{const submission=store.get('SELECT * FROM resource_submissions WHERE id=?',id);const publicRow=submission.public_resource_id?store.get('SELECT * FROM resources WHERE id=? AND deleted_at IS NULL',submission.public_resource_id):null;return {submission:visible(submission),resource:visible(publicRow)};};
       if(sub.status!=='pending'){if(sub.status!==status)throw new HttpError(409,'SUBMISSION_DECIDED','投稿已审核，不能更改决定');return respond(reviewResult());}
+      return withUploadQuota(store,config,user,status==='accepted'?sub.size:0,async()=>{
       let publicRow=null,key=null;
       if(status==='accepted'){key=await copyStoredFile(config,sub.storage_key);publicRow={id:randomUUID(),scope:'public',owner_user_id:null,subject_id:null,course_id:sub.course_id,submission_id:sub.id,name:sub.name,original_name:sub.original_name,mime:sub.mime,size:sub.size,storage_key:key,created_at:now()};}
       let inserted=false;
-      try{store.transaction(()=>{const current=store.get('SELECT status FROM resource_submissions WHERE id=?',id);if(current.status!== 'pending'){if(current.status!==status)throw new HttpError(409,'SUBMISSION_DECIDED','投稿已审核，不能更改决定');return;}if(publicRow){insertResource(store,publicRow);inserted=true;}store.run('UPDATE resource_submissions SET status=?,public_resource_id=?,note=?,reviewed_by=?,reviewed_at=? WHERE id=?',status,publicRow?.id||null,body.note||null,user.id,now(),id);});}catch(e){if(key)await removeFile(config,key);throw e;}
+      try{store.transaction(()=>{const current=store.get('SELECT status,deleted_at FROM resource_submissions WHERE id=?',id);if(current.deleted_at)throw missing();if(current.status!== 'pending'){if(current.status!==status)throw new HttpError(409,'SUBMISSION_DECIDED','投稿已审核，不能更改决定');return;}if(publicRow){insertResource(store,publicRow);inserted=true;}store.run('UPDATE resource_submissions SET status=?,public_resource_id=?,note=?,reviewed_by=?,reviewed_at=? WHERE id=?',status,publicRow?.id||null,body.note||null,user.id,now(),id);audit(store,user,'submission.'+status,'submission',id);});}catch(e){if(key)await removeFile(config,key);throw e;}
       if(key&&!inserted)await removeFile(config,key);
       if(inserted)storeExtraction(store,publicRow.id,await extractResource(publicRow,config,ctx.ai));return respond(reviewResult());
+      });
     }
   }
   throw new HttpError(405,'METHOD_NOT_ALLOWED','此操作不支持');

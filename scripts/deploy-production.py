@@ -75,7 +75,7 @@ def main():
                 try:
                     health=json.loads(run(f'curl -fsS https://{HOST}/api/health',True))
                     version=json.loads(run(f'curl -fsS https://{HOST}/version.json',True))
-                    if health==before and version['revision']==revision:healthy=True;break
+                    if health.get('status')=='ok' and version['revision']==revision:healthy=True;break
                 except Exception:pass
                 time.sleep(2)
             if not healthy:raise RuntimeError('Published version/health verification failed')

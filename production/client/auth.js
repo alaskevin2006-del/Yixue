@@ -3,15 +3,17 @@ import {api} from './api.js';
 import {setStorageOwner} from './storage.js';
 const screen=document.querySelector('#login-screen'),app=document.querySelector('#signed-in-app'),form=document.querySelector('#login-form'),status=document.querySelector('#login-status'),error=document.querySelector('#login-error'),retry=document.querySelector('#login-retry'),exit=document.querySelector('#account-exit');
 let user=null,checking=false,loaded=false,generation=0;
-const signalKey='yixue-auth-change';
+const basePath=new URL('../',import.meta.url).pathname;
+const signalKey='yixue-auth-change:'+basePath;
 function broadcast(){try{localStorage.setItem(signalKey,crypto.randomUUID());}catch{/* Session security does not depend on storage availability. */}}
 function lock(message='请重新登录。'){
  generation++;api.resetSession();setSessionActive(false);user=null;app.hidden=true;screen.hidden=false;document.querySelector('main').replaceChildren();document.querySelector('#dialog').close();document.querySelector('#dialog').replaceChildren();document.querySelector('#notice').hidden=true;error.textContent=message;status.textContent='';form.querySelector('button').disabled=false;
 }
 async function enter(identity){
+ if(identity.role==='admin'&&new URLSearchParams(location.search).get('view')!=='user'){location.replace(basePath+'admin/');return;}
  if(loaded){location.reload();return;}
  const token=generation;user=identity;setSessionActive(true);setStorageOwner(user.id);exit.title=user.username+' · 退出登录';
- try{await import('./main.js');loaded=true;if(token!==generation)return;screen.hidden=true;app.hidden=false;}
+ try{const health=await api('/api/health');if(token!==generation)return;const badge=document.querySelector('.prototype-badge');badge.textContent=(health.environment==='test'?'测试环境 · ':health.environment==='local'?'本地环境 · ':'')+'服务器保存';await import('./main.js');loaded=true;if(token!==generation)return;screen.hidden=true;app.hidden=false;}
  catch{lock('页面未能加载，请重新连接。');retry.hidden=false;}
 }
 async function check(){

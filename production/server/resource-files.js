@@ -54,7 +54,7 @@ export async function readUpload(req,config={}) {
       stream.on('data',chunk=>{file.size+=chunk.length;if(file.size>limit)fail(413,'FILE_TOO_LARGE','资料不能超过20MiB');if(!problem) file.chunks.push(chunk);});
       stream.on('error',()=>fail(400,'UPLOAD_FAILED','上传中断，请重试'));
     });
-    parser.on('field',(name,value,info)=>{if(info.valueTruncated || !['name','subjectId','courseId'].includes(name) || Object.hasOwn(fields,name)) fail(400,'INVALID_FIELD','上传字段无效');else fields[name]=value;});
+    parser.on('field',(name,value,info)=>{if(info.valueTruncated || !['name','subjectId','courseId','description'].includes(name) || Object.hasOwn(fields,name)) fail(400,'INVALID_FIELD','上传字段无效');else fields[name]=value;});
     parser.on('filesLimit',()=>fail(400,'TOO_MANY_FILES','只接受一个资料文件'));
     parser.on('fieldsLimit',()=>fail(400,'INVALID_FIELD','上传字段过多'));
     parser.on('partsLimit',()=>fail(400,'INVALID_FIELD','上传字段过多'));

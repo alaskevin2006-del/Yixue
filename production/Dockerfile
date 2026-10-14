@@ -4,6 +4,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY index.html styles.css app.js ./
 COPY client ./client
+COPY admin ./admin
 COPY scripts/build.mjs ./scripts/build.mjs
 ARG YIXUE_REVISION=development
 RUN YIXUE_REVISION=$YIXUE_REVISION npm run build && npm prune --omit=dev
@@ -15,7 +16,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package.json ./
 COPY server ./server
-COPY scripts/backup.mjs ./scripts/backup.mjs
+COPY scripts ./scripts
 RUN mkdir -p /data/uploads && chown -R node:node /data
 USER node
 EXPOSE 3000

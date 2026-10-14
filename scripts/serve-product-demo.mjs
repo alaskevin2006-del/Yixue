@@ -1,9 +1,12 @@
-import {Store} from '../production/server/store.js';
-import {createProductionServer} from '../production/server/production.js';
+import {readConfig} from '../production/server/config.js';
+import {startApplication} from '../production/server/start.js';
+import {resolve,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const port=Number(process.env.YIXUE_DEMO_PORT??3001);
 if(!process.env.YIXUE_DEMO_PASSWORD)throw new Error('Set YIXUE_DEMO_USERNAME and YIXUE_DEMO_PASSWORD for the local login demo.');
-const store=new Store(':memory:');
-const server=await createProductionServer(store,{config:{staticRoot:fileURLToPath(new URL('../dist/',import.meta.url)),adminUsername:process.env.YIXUE_DEMO_USERNAME??'demo',adminPassword:process.env.YIXUE_DEMO_PASSWORD,secureCookies:false}});
-server.listen(port,'127.0.0.1',()=>console.log(`Local login prototype: http://127.0.0.1:${port}`));
-for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>server.close(()=>{store.close();process.exit(0);}));
+if(process.env.NODE_ENV==='production')throw Error('Local development launcher cannot run in production.');
+const dataDir=resolve(process.env.YIXUE_DEMO_DATA_DIR??fileURLToPath(new URL('../.data/local/',import.meta.url)));
+const config=readConfig({...process.env,NODE_ENV:'development',YIXUE_ENVIRONMENT:'local',YIXUE_HOST:'127.0.0.1',YIXUE_PORT:String(port),YIXUE_DB_PATH:join(dataDir,'yixue.sqlite'),YIXUE_UPLOADS_DIR:join(dataDir,'uploads'),YIXUE_STATIC_ROOT:fileURLToPath(new URL('../dist/',import.meta.url)),YIXUE_ADMIN_USERNAME:process.env.YIXUE_DEMO_USERNAME??'demo',YIXUE_ADMIN_PASSWORD:process.env.YIXUE_DEMO_PASSWORD},['--serve-frontend']);
+const app=await startApplication(config);
+console.log(`Persistent local service: http://127.0.0.1:${app.server.address().port}`);
+for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>app.stop().then(()=>process.exit(0)));

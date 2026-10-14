@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'./tests/e2e',fullyParallel:true,workers:3,timeout:30000,reporter:'list',use:{baseURL:'http://127.0.0.1:3003',headless:true,channel:process.env.PLAYWRIGHT_CHANNEL||undefined,viewport:{width:1440,height:1000},screenshot:'only-on-failure'},webServer:{command:'node scripts/serve-product-demo.mjs',url:'http://127.0.0.1:3003',env:{YIXUE_DEMO_PORT:'3003'},reuseExistingServer:false}});

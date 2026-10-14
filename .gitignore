@@ -8,3 +8,7 @@ Thumbs.db
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+test-results/
+playwright-report/
+__pycache__/
+acceptance/*.png

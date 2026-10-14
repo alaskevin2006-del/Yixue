@@ -1,4 +1,5 @@
-import { copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, rmSync, readdirSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -16,4 +17,12 @@ for (const file of files) {
   copyFileSync(join(root, file), join(dist, file));
 }
 
-console.log(`Built ${files.length} files into dist/`);
+for (const folder of ['client', 'legacy']) {
+  mkdirSync(join(dist, folder), { recursive: true });
+  for (const file of readdirSync(join(root, folder))) copyFileSync(join(root, folder, file), join(dist, folder, file));
+}
+let revision = 'uncommitted';
+try { revision = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(); } catch {}
+writeFileSync(join(dist, 'version.json'), JSON.stringify({ revision, builtAt: new Date().toISOString(), mode: 'browser-prototype' }));
+
+console.log('Built user prototype, client modules, version and preserved local frontend into dist/');

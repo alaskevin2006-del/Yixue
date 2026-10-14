@@ -11,5 +11,5 @@ export function readConfig(env = process.env, args = process.argv.slice(2)) {
   const rawPath = env.YIXUE_DB_PATH ?? fileURLToPath(new URL("../.data/yixue.sqlite", import.meta.url));
   if (!rawPath.trim() || rawPath === ":memory:") throw new Error("A disk database path is required.");
   return { host: "127.0.0.1", port: Number(rawPort), dbPath: resolve(rawPath), principalMode: "DEV_ONLY",
-    staticRoot: args.includes("--serve-frontend") ? fileURLToPath(new URL("../dist/", import.meta.url)) : null };
+    staticRoot: args.includes("--serve-frontend") ? fileURLToPath(new URL("../dist/legacy/", import.meta.url)) : null };
 }

@@ -1,0 +1,118 @@
+import test, {before,after} from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,mkdir,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {randomBytes} from 'node:crypto';
+import {chromium} from '@playwright/test';
+import {Store} from '../../server/store.js';
+import {createProductionServer} from '../../server/production.js';
+import {initResources,handleResources,getReferenceContext} from '../../server/resources.js';
+import {initContinuity,handleContinuity,getLearningContext,recordAnswerSources} from '../../server/continuity.js';
+
+let browser,server,store,dir,baseURL;
+const credentials={username:'browser-admin',password:randomBytes(24).toString('hex')};
+const artifacts=path.resolve('test-results/frontend');
+const failures=new Set();
+const ai={configured:true,capabilities:{vision:false},generate:async input=>{
+  const text=JSON.stringify(input.messages);
+  if(input.purpose==='memory-candidates'){const supplied=JSON.parse(input.messages[0].content);return JSON.stringify({candidates:[{title:'迭代器删除',content:'我容易忘记 erase 后应使用返回的迭代器，仍需练习。',status:'active',sourceIds:supplied.sourceIds,targetMemoryId:supplied.existingMemories[0]?.id||null}]});}
+  if(input.purpose==='state-preview')return '迭代器删除仍需练习；明天有课堂测验。';
+  if(input.purpose==='action-advice')return '先用 20 分钟练习迭代器删除，再检查课堂测验范围。';
+  if(text.includes('fail-once')&&!failures.has(text)){failures.add(text);throw new Error('Injected test-only provider outage');}
+  return '这是由测试适配器生成的回答。\n\n```cpp\nauto it = values.erase(it);\n```\n\n公式：$x^2 + y^2 = 1$。另一个式子：\\(a+b\\)。\n\n\\[c=d\\]\n\n<img src=x onerror="window.__unsafe=true"><script>window.__unsafe=true</script> [安全链接](https://example.org)';
+}};
+before(async()=>{
+  dir=await mkdtemp(path.join(tmpdir(),'yixue-browser-'));store=new Store(path.join(dir,'test.sqlite'));
+  const config={uploadsDir:path.join(dir,'uploads'),staticRoot:path.resolve('dist'),adminUsername:credentials.username,adminPassword:credentials.password,secureCookies:false};
+  await initResources(store,config);initContinuity(store,config);
+  server=await createProductionServer(store,{config,ai,handlers:[handleResources,handleContinuity],contextHooks:{resourceContext:getReferenceContext,learningContext:getLearningContext,recordAnswerSources}});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));baseURL=`http://127.0.0.1:${server.address().port}`;
+  browser=await chromium.launch({channel:process.env.YIXUE_BROWSER_CHANNEL||'msedge',headless:true});await mkdir(artifacts,{recursive:true});
+});
+after(async()=>{await browser?.close();await server?.drain();if(server)await new Promise(resolve=>server.close(resolve));store?.close();if(dir)await rm(dir,{recursive:true,force:true});});
+async function pageFor(t,width=1366){const context=await browser.newContext({viewport:{width,height:900},acceptDownloads:true});const page=await context.newPage();page.setDefaultTimeout(10000);const errors=[];page.on('pageerror',error=>errors.push(error.message));t.after(async()=>{await page.screenshot({path:path.join(artifacts,`last-${width}-${t.name.slice(0,15).replace(/\W/g,'-')}.png`),fullPage:true});await context.close();assert.deepEqual(errors,[]);});await page.goto(baseURL);await page.locator('[data-login] [name=username]').fill(credentials.username);await page.locator('[data-login] [name=password]').fill(credentials.password);await page.locator('[data-login] button').click();await page.locator('[data-app]').waitFor({state:'visible'});return page;}
+async function subjectAndChat(page,name){await page.locator('[data-view-link=subjects]').click();await page.locator('[data-add-subject]').click();await page.locator('dialog [name=name]').fill(name);await page.getByRole('button',{name:'创建学科',exact:true}).click();await page.locator('[data-current-subject]').waitFor({state:'visible'});await page.locator('[data-nav-toggle]').click();await page.locator('[data-new-conversation]').click();await page.locator('[data-message-input]').waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('[data-message-input]').disabled);}
+async function send(page,content){await page.locator('[data-message-input]').fill(content);await page.locator('[data-send-message]').click();await page.waitForFunction(()=>document.querySelectorAll('.r1-assistant-message').length>0&&document.querySelector('[data-run-status]').textContent==='');}
+async function mutation(page,endpoint,method,body){return page.evaluate(async({endpoint,method,body})=>{const me=await(await fetch('/api/auth/me')).json();const response=await fetch(endpoint,{method,headers:{'content-type':'application/json','X-CSRF-Token':me.csrfToken},body:body===undefined?undefined:JSON.stringify(body)});return {status:response.status,data:response.status===204?null:await response.json()};},{endpoint,method,body});}
+
+test('real login, persistent icon/chat, safe Markdown/code/math, provider retry',async t=>{
+  const page=await pageFor(t);await subjectAndChat(page,'浏览器学习验证');await send(page,'请解释 erase 后的 iterator');
+  assert.equal(await page.locator('.rich-text pre code').count(),1);assert.equal(await page.locator('.katex').count(),3);assert.equal(await page.locator('.rich-text img,.rich-text script').count(),0);assert.equal(await page.evaluate(()=>window.__unsafe),undefined);
+  await page.locator('[data-subject-home]').click();await page.getByRole('button',{name:'编辑 浏览器学习验证',exact:true}).click();await page.locator('dialog select[name=icon]').selectOption('💻');await page.getByRole('button',{name:'保存',exact:true}).click();await page.reload();await page.locator('.r1-subject-icon').first().waitFor({state:'visible'});assert.match(await page.locator('[data-subject-list]').textContent(),/💻/);
+  await page.getByRole('button',{name:'💻 浏览器学习验证',exact:true}).click();await page.locator('[data-nav-toggle]').click();await page.locator('.r1-conversation-entry').first().click();await page.locator('.r1-assistant-message').waitFor({state:'visible'});
+  await page.locator('[data-message-input]').fill('fail-once');await page.locator('[data-send-message]').click();await page.getByRole('button',{name:'重试回答',exact:true}).waitFor({state:'visible'});assert.equal(await page.locator('.r1-user-message').count(),2);
+  await page.getByRole('button',{name:'重试回答',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('.r1-assistant-message').length===2);assert.equal(await page.locator('.r1-user-message').count(),2);
+  await page.screenshot({path:path.join(artifacts,'desktop-learning.png'),fullPage:true});
+});
+
+test('private upload, explicit reference, download and deletion revokes future use',async t=>{
+  const page=await pageFor(t);await subjectAndChat(page,'资料验证');await send(page,'测试资料引用');
+  await page.locator('[data-subject-tab=files]').click();await page.getByRole('button',{name:'上传资料',exact:true}).click();await page.locator('dialog input[type=file]').setInputFiles({name:'真实测试资料.txt',mimeType:'text/plain',buffer:Buffer.from('真实文件内容：erase 返回后继 iterator。')});await page.getByRole('button',{name:'上传私人资料',exact:true}).click();await page.getByRole('button',{name:'真实测试资料.txt',exact:true}).waitFor({state:'visible'});
+  await page.locator('[data-subject-tab=learn]').click();await page.getByRole('button',{name:'选择本次参考',exact:true}).click();await page.locator('dialog input[name=resourceId]').check();await page.getByRole('button',{name:'保存本次参考',exact:true}).click();await page.locator('[data-references]').getByText(/真实测试资料/).waitFor({state:'visible'});assert.match(await page.locator('[data-references]').textContent(),/真实测试资料/);
+  await page.locator('[data-subject-tab=files]').click();const download=page.waitForEvent('download');await page.getByRole('link',{name:'下载',exact:true}).click();assert.equal((await download).suggestedFilename(),'真实测试资料.txt');
+  await page.getByRole('button',{name:'真实测试资料.txt',exact:true}).click();await page.getByRole('button',{name:'删除资料',exact:true}).click();await page.getByRole('button',{name:'删除这份资料',exact:true}).click();await page.locator('[data-subject-tab=learn]').click();await page.locator('[data-references]').getByText(/已不可用/).waitFor({state:'visible'});assert.match(await page.locator('[data-references]').textContent(),/已不可用/);assert.equal(await page.locator('.r1-assistant-message').count(),1);
+});
+
+test('learning candidates require adoption and document sources remain explicit',async t=>{
+ const page=await pageFor(t);await subjectAndChat(page,'连续性验证');await send(page,'我容易忘记 iterator erase');const originalId=page.url().split('/').at(-1);
+ await page.locator('[data-review-current]').click();await page.getByRole('button',{name:'编辑并保留',exact:true}).click();assert.equal(store.get('SELECT count(*) AS n FROM learning_memories').n,0);
+ await page.getByRole('button',{name:'确认保留',exact:true}).click();await page.locator('[data-modal]').waitFor({state:'hidden'});assert.equal(store.get('SELECT count(*) AS n FROM learning_memories').n,1);
+ await page.locator('[data-subject-tab=review]').click();await page.getByRole('button',{name:'迭代器删除',exact:true}).click();await page.getByRole('button',{name:'用于当前对话',exact:true}).click();await page.locator('[data-global-status]').getByText(/已选择这篇记录/).waitFor();assert.equal(store.get('SELECT count(*) n FROM conversation_memory_refs').n,1);
+ await mutation(page,`/api/conversations/${originalId}`,'DELETE');await page.getByRole('button',{name:'查看来源',exact:true}).click();await page.locator('[data-modal-content]').getByText(/原始来源已不可用/).waitFor();await page.locator('[data-modal-close]').click();await page.screenshot({path:path.join(artifacts,'desktop-review.png'),fullPage:true});
+});
+
+test('independent status text saves manually and agenda persists on reload',async t=>{
+ const page=await pageFor(t);await page.getByRole('button',{name:'打开规划助手'}).click();await page.getByRole('button',{name:'学科状态',exact:true}).click();await page.getByRole('button',{name:'＋ 新建文本'}).click();await page.getByRole('textbox',{name:'学科名称'}).fill('独立数学');await page.getByRole('textbox',{name:'状态文本'}).fill('我想练习积分');assert.equal(store.get("SELECT count(*) n FROM planner_records WHERE kind='text'").n,0);await page.getByRole('button',{name:'保存文本'}).click();await page.getByRole('button',{name:'独立数学',exact:true}).waitFor();await page.locator('[data-modal-close]').click();await page.getByRole('button',{name:'首页',exact:true}).click();await page.getByRole('button',{name:'＋ 安排'}).click();await page.getByRole('textbox',{name:'安排',exact:true}).fill('做两道积分题');await page.getByRole('button',{name:'保存安排'}).click();await page.locator('dialog').first().waitFor({state:'hidden'});await page.reload();await page.getByRole('button',{name:/做两道积分题/}).waitFor();await page.screenshot({path:path.join(artifacts,'desktop-home.png'),fullPage:true});
+});
+
+test('independent submission review creates downloadable public resource',async t=>{
+  const page=await pageFor(t);await page.locator('[data-view-link=library]').click();await page.getByRole('button',{name:'添加课程',exact:true}).click();await page.locator('dialog [name=name]').fill('浏览器实际课程');await page.getByRole('button',{name:'添加课程',exact:true}).last().click();await page.locator('[data-library-tab=submission]').click();await page.getByRole('button',{name:'选择文件投稿',exact:true}).click();await page.locator('dialog input[type=file]').setInputFiles({name:'投稿课堂笔记.md',mimeType:'text/markdown',buffer:Buffer.from('# 课堂笔记\n独立投稿验证。')});await page.getByRole('button',{name:'提交投稿',exact:true}).click();await page.locator('[data-account]').click();await page.getByRole('button',{name:'投稿审核',exact:true}).click();await page.getByRole('button',{name:'审核',exact:true}).click();await page.getByRole('button',{name:'收录',exact:true}).click();await page.locator('[data-library-tab=public]').click();await page.getByRole('button',{name:'投稿课堂笔记.md',exact:true}).waitFor({state:'visible'});assert.equal(store.get('SELECT count(*) AS n FROM resources WHERE scope=?','public').n,1);
+});
+
+for(const width of [390,320])test(`core learning and upload controls fit ${width}px mobile`,async t=>{
+  const page=await pageFor(t,width);await subjectAndChat(page,`手机验证${width}`);await send(page,'手机输入具体学习问题');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));await page.screenshot({path:path.join(artifacts,`mobile-${width}-learning.png`),fullPage:true});
+  await page.locator('[data-subject-tab=files]').click();await page.getByRole('button',{name:'上传资料',exact:true}).click();assert.ok(await page.evaluate(()=>document.querySelector('dialog[open]').getBoundingClientRect().right<=innerWidth));await page.screenshot({path:path.join(artifacts,`mobile-${width}-upload.png`),fullPage:true});
+});
+
+test('administrator can disable and re-enable an account from the account panel',async t=>{
+  const page=await pageFor(t);
+  const {data:{user}}=await mutation(page,'/api/admin/users','POST',{username:'toggle-browser',password:'test-password-strong'});
+  await page.locator('[data-account]').click();await page.getByRole('button',{name:'账户管理',exact:true}).click();
+  const row=page.locator('.account-row').filter({hasText:'toggle-browser'});
+  await row.getByRole('button',{name:'停用账户',exact:true}).click();
+  await row.getByRole('button',{name:'启用账户',exact:true}).waitFor({state:'visible'});
+  assert.equal(store.get('SELECT disabled FROM users WHERE id=?',user.id).disabled,1);
+  await row.getByRole('button',{name:'启用账户',exact:true}).click();
+  await row.getByRole('button',{name:'停用账户',exact:true}).waitFor({state:'visible'});
+  assert.equal(store.get('SELECT disabled FROM users WHERE id=?',user.id).disabled,0);
+});
+
+test('mobile schedule planner and library remain reachable at 320px',async t=>{
+ const page=await pageFor(t,320);await page.locator('.calendar').waitFor();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(artifacts,'mobile-320-home.png'),fullPage:true});await page.getByRole('button',{name:'打开规划助手'}).click();await page.getByRole('button',{name:'学科状态',exact:true}).click();await page.getByRole('button',{name:'＋ 新建文本'}).click();await page.getByRole('textbox',{name:'学科名称'}).fill('手机数学');await page.getByRole('textbox',{name:'状态文本'}).fill('手机编辑文本');await page.getByRole('button',{name:'保存文本'}).click();await page.getByRole('button',{name:'手机数学',exact:true}).waitFor();await page.locator('[data-modal-close]').click();await page.getByRole('button',{name:'资料库',exact:true}).click();await page.locator('[data-library-content] .resource-list').waitFor();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(artifacts,'mobile-320-library.png'),fullPage:true});
+});
+
+test('administrator provisions and resets account; changing password returns to login with tenant isolation',async t=>{
+  const page=await pageFor(t);const username=`student-${randomBytes(4).toString('hex')}`;const initial=randomBytes(16).toString('hex'),reset=randomBytes(16).toString('hex'),changed=randomBytes(16).toString('hex');
+  await page.locator('[data-account]').click();await page.getByRole('button',{name:'账户管理',exact:true}).click();await page.locator('dialog [name=username]').fill(username);await page.locator('dialog [name=password]').fill(initial);await page.getByRole('button',{name:'开通账户',exact:true}).click();const row=page.locator('.account-row').filter({hasText:username});await row.waitFor({state:'visible'});await row.getByRole('button',{name:'重置密码',exact:true}).click();await page.locator('dialog [name=password]').fill(reset);await page.getByRole('button',{name:'重置密码',exact:true}).click();await row.waitFor({state:'visible'});
+  await page.locator('[data-modal-close]').click();await page.locator('[data-account]').click();await page.getByRole('button',{name:'退出登录',exact:true}).click();await page.locator('[data-auth]').waitFor({state:'visible'});await page.locator('[data-login] [name=username]').fill(username);await page.locator('[data-login] [name=password]').fill(reset);await page.locator('[data-login] button').click();await page.locator('[data-app]').waitFor({state:'visible'});await page.getByRole('button',{name:'学科空间',exact:true}).click();await page.locator('[data-subject-list]').getByText(/添加一个学科/).waitFor({state:'visible'});assert.equal(await page.locator('.r1-subject-entry').count(),0);assert.equal(await page.locator('[data-library-tab=moderation]').isVisible(),false);
+  await page.locator('[data-account]').click();assert.equal(await page.getByRole('button',{name:'账户管理',exact:true}).count(),0);await page.locator('dialog [name=currentPassword]').fill(reset);await page.locator('dialog [name=newPassword]').fill(changed);await page.getByRole('button',{name:'修改密码',exact:true}).click();await page.locator('[data-auth]').waitFor({state:'visible'});assert.match(await page.locator('[data-login-error]').textContent(),/密码已修改/);
+  await page.locator('[data-login] [name=username]').fill(username);await page.locator('[data-login] [name=password]').fill(changed);await page.locator('[data-login] button').click();await page.locator('[data-app]').waitFor({state:'visible'});assert.equal(await page.locator('.r1-subject-entry').count(),0);
+});
+
+test('new subject can be renamed while keeping its default icon',async t=>{
+  const page=await pageFor(t);await subjectAndChat(page,'默认图标验证');await page.locator('[data-subject-home]').click();await page.getByRole('button',{name:'编辑 默认图标验证',exact:true}).click();await page.locator('dialog [name=name]').fill('重命名学科');await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'📘 重命名学科',exact:true}).waitFor({state:'visible'});await page.reload();await page.getByRole('button',{name:'📘 重命名学科',exact:true}).waitFor({state:'visible'});
+});
+
+test('empty review is a document list and never auto generates records',async t=>{
+ const page=await pageFor(t);await subjectAndChat(page,'空回顾验证');await page.locator('[data-subject-tab=review]').click();await page.getByText('还没有学习记录。只留下以后真正用得上的内容。').waitFor();assert.equal(await page.locator('[data-review-panel] .document-row').count(),0);assert.equal(await page.locator('[data-review-panel] .candidate-section').count(),0);
+});
+
+test('candidate editing updates a stable memory and ignoring a later candidate leaves it unchanged',async t=>{
+  const page=await pageFor(t);await subjectAndChat(page,'记忆演化验证');await send(page,'我需要练习 iterator erase');const subjectId=page.url().split('/').at(-2);
+  async function reviewAndExtract(){await page.locator('[data-review-current]').click();await page.getByRole('button',{name:'编辑并保留',exact:true}).waitFor();}
+  await reviewAndExtract(true);await page.getByRole('button',{name:'编辑并保留',exact:true}).click();await page.locator('dialog textarea[name=content]').fill('用户确认：删除后要采用返回的 iterator，仍需用实例练习。');await page.getByRole('button',{name:'确认保留',exact:true}).click();await page.locator('[data-modal]').waitFor({state:'hidden'});const memory=store.get('SELECT * FROM learning_memories WHERE subject_space_id=?',subjectId);
+  await reviewAndExtract();await page.getByRole('button',{name:'编辑并保留',exact:true}).click();assert.equal(await page.locator('dialog select[name=targetMemoryId]').inputValue(),memory.id);await page.locator('dialog textarea[name=content]').fill('用户修正：循环删除已理解，边界条件仍要检查。');await page.getByRole('button',{name:'确认保留',exact:true}).click();await page.locator('[data-modal]').waitFor({state:'hidden'});assert.equal(store.get('SELECT count(*) AS n FROM learning_memories WHERE subject_space_id=?',subjectId).n,1);const updated=store.get('SELECT * FROM learning_memories WHERE id=?',memory.id);assert.equal(updated.version,2);assert.match(updated.content,/用户修正/);
+  await reviewAndExtract();await page.getByRole('button',{name:'忽略',exact:true}).click();await page.locator('dialog .candidate-row').waitFor({state:'hidden'});assert.equal(store.get('SELECT version FROM learning_memories WHERE id=?',memory.id).version,2);
+});

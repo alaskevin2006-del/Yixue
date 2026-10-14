@@ -1,0 +1,33 @@
+{
+  "name": "yixue-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "preview": "npx http-server dist -p 4173",
+    "test:e2e": "npm run build && node --test --test-concurrency=1 tests/frontend/browser.test.js",
+    "start": "node --env-file-if-exists=.env server/start.js --serve-frontend",
+    "server": "node --env-file-if-exists=.env server/start.js --serve-frontend",
+    "dev:local": "npm run build && node --env-file-if-exists=.env server/start.js --serve-frontend",
+    "test": "npm run build && node --test --test-concurrency=1 tests/backend/*.test.js tests/frontend/*.test.js",
+    "test:backend": "node --test --test-concurrency=1 tests/backend/*.test.js",
+    "demo:product": "node scripts/serve-product-demo.mjs",
+    "backup": "node scripts/backup.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.11",
+    "busboy": "^1.6.0",
+    "dompurify": "^3.4.17",
+    "fflate": "^0.8.3",
+    "katex": "^0.19.0",
+    "marked": "^18.1.1",
+    "pdfjs-dist": "^6.4.299"
+  }
+}

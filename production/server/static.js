@@ -25,7 +25,7 @@ export async function serveFrontend(req, res, path, root) {
     const rel=relative(realRoot,target);
     if(rel.startsWith('..') || isAbsolute(rel)) { res.writeHead(404).end('Not found'); return; }
     const body = await readFile(target);
-    res.writeHead(200, { "content-type": file[1], "cache-control": "no-store", "x-content-type-options": "nosniff", "content-security-policy":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" });
+    res.writeHead(200, { "content-type": file[1], "cache-control": "no-store", "x-content-type-options": "nosniff", "content-security-policy":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self' blob:; object-src 'none'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" });
     res.end(req.method === "HEAD" ? undefined : body);
   } catch { res.writeHead(asset ? 404 : 503).end(asset ? 'Not found' : "Built frontend unavailable. Run npm run build."); }
 }

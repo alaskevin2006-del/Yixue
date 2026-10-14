@@ -64,7 +64,10 @@ def main():
         print('Image built. Briefly stopping app for a consistent data/files backup.',flush=True)
         run(f'cd {BASE} && {COMPOSE} stop app')
         try:
-            run(f'docker run --rm --user root -v {BASE}/deploy-data/app:/data:ro -v {backup}:/backup {oldtag} node scripts/backup.mjs backup /data /backup/data --offline',True)
+            # SQLite may need writable WAL sidecars even for a read-only connection.
+            # Validate an offline copy on the backup volume, keeping original data read-only.
+            backup_code = "import {cp} from 'node:fs/promises'; import {createBackup} from './scripts/backup.mjs'; await cp('/data','/backup/raw',{recursive:true}); await createBackup({dataDir:'/backup/raw',outputDir:'/backup/data',offline:true});"
+            run(f'docker run --rm --user root -v {BASE}/deploy-data/app:/data:ro -v {backup}:/backup {oldtag} node --input-type=module -e '+shlex.quote(backup_code),True)
             run(f'docker tag {newtag} yixue-app:latest')
             run(f'cd {BASE} && {COMPOSE} up -d --no-deps --no-build app')
             healthy=False

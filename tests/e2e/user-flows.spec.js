@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test';
+test.beforeEach(async({page})=>{const response=await page.request.post('/api/auth/login',{data:{username:'prototype-test',password:'local-test-only-password'}});expect(response.ok()).toBeTruthy();});
 test('home preserves day/week and opens independent planner',async({page})=>{
  await page.goto('/');await expect(page.locator('.calendar.week')).toBeVisible();
  await page.getByRole('button',{name:'日',exact:true}).click();await expect(page.locator('.calendar.day')).toBeVisible();

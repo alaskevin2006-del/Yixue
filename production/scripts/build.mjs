@@ -32,4 +32,4 @@ copyDirectory(join(root,'node_modules/katex/dist'),join(vendor,'katex'));
 
 console.log(`Built ${files.length} files into dist/`);
 
-writeFileSync(join(dist,'version.json'),JSON.stringify({revision:process.env.YIXUE_REVISION||'development',builtAt:new Date().toISOString(),product:'production-user-interface'}));
+writeFileSync(join(dist,'version.json'),JSON.stringify({revision:process.env.YIXUE_REVISION||'development',builtAt:new Date().toISOString(),product:'local-prototype-with-login'}));

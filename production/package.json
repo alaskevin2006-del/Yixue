@@ -9,11 +9,11 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "preview": "npx http-server dist -p 4173",
-    "test:e2e": "npm run build && node --test --test-concurrency=1 tests/frontend/browser.test.js",
+    "test:e2e": "cd .. && npm run test:e2e",
     "start": "node --env-file-if-exists=.env server/start.js --serve-frontend",
     "server": "node --env-file-if-exists=.env server/start.js --serve-frontend",
     "dev:local": "npm run build && node --env-file-if-exists=.env server/start.js --serve-frontend",
-    "test": "npm run build && node --test --test-concurrency=1 tests/backend/*.test.js tests/frontend/*.test.js",
+    "test": "npm run build && node --test --test-concurrency=1 tests/backend/*.test.js tests/frontend/client.test.js",
     "test:backend": "node --test --test-concurrency=1 tests/backend/*.test.js",
     "demo:product": "node scripts/serve-product-demo.mjs",
     "backup": "node scripts/backup.mjs"

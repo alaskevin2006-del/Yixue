@@ -1,30 +1,33 @@
+import {isSessionActive} from './session-state.js';
 import {dateKey,reduce,scoped} from './model.js';
-import {loadState,saveState,files} from './storage.js';
+import {loadState,saveState,files,STATE_KEY} from './storage.js';
 import {courses,resources,candidates} from './fixtures.js';
 import * as view from './views.js';
 const {h,btn}=view;
 const main=document.querySelector('main'),dialog=document.querySelector('#dialog'),notice=document.querySelector('#notice');
 const id=()=>globalThis.crypto?.randomUUID?.()??`local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 let state,loadError,undo=null,routeVersion=0,previewUrl=null,storageRevision=null;
-try{state=loadState();storageRevision=localStorage.getItem('yixue-user-prototype-v2');}catch(e){loadError=e;}
+try{state=loadState();storageRevision=localStorage.getItem(STATE_KEY);}catch(e){loadError=e;}
 const ui={page:'home',date:new Date(),calendarMode:'week',course:'cpp',libraryQuery:'',resourceType:'',resourceYear:'',subjectQuery:'',fileQuery:'',fileList:[],fileLoading:false,historyOpen:false,drafts:{},documentDrafts:{},documentDraft:null,documentEditing:false};
 function tell(message,undoAction=null){undo=undoAction;notice.hidden=false;notice.innerHTML=`<span>${h(message)}</span>${undo?btn('撤销','undo'):''}${btn('×','notice-close','','icon-button')}`;}
-function commit(action){if(localStorage.getItem('yixue-user-prototype-v2')!==storageRevision)throw new Error('另一个窗口已更新数据，请刷新后继续。当前操作未保存。');const next=reduce(state,action);try{saveState(next);}catch{throw new Error('未能保存：浏览器存储可能已满或被禁用。原内容未更改，请下载备份。');}state=next;storageRevision=JSON.stringify(next);}
+function commit(action){if(!isSessionActive())throw new Error('请先登录。');if(localStorage.getItem(STATE_KEY)!==storageRevision)throw new Error('另一个窗口已更新数据，请刷新后继续。当前操作未保存。');const next=reduce(state,action);try{saveState(next);}catch{throw new Error('未能保存：浏览器存储可能已满或被禁用。原内容未更改，请下载备份。');}state=next;storageRevision=JSON.stringify(next);}
 function go(path){if(location.hash==='#'+path)route();else location.hash=path;}
 function subjectRoute(tab=ui.tab,tail=''){return `subjects/${encodeURIComponent(ui.subjectId)}/${tab}${tail?'/'+encodeURIComponent(tail):''}`;}
 function chat(){return state.chats.find(c=>c.id===ui.chatId&&c.subjectId===ui.subjectId);}
 function doc(){return scoped(state,ui.subjectId).documents.find(d=>d.id===ui.documentId);}
 function captureDraft(){const el=main.querySelector('textarea[name=content]');if(el)ui.drafts[(ui.page==='planner'?'planner:':'chat:'+ui.subjectId+':')+(ui.page==='planner'?ui.plannerId:ui.chatId)]=el.value;}
 function render(){
+ if(!isSessionActive())return;
  if(loadError){main.innerHTML=`<section class="page"><h1>无法读取本机数据</h1><p>${h(loadError.message)}</p><p>请勿清除浏览器数据。可以先下载现有备份。</p>${btn('下载原始数据','backup')}</section>`;return;}
  document.querySelectorAll('.topbar nav a').forEach(a=>{const section=ui.page==='planner'?'home':ui.page==='submission'?'library':ui.page==='workspace'||ui.page==='document'?'subjects':ui.page;const active=a.hash==='#'+section;a.classList.toggle('selected',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
  try{main.innerHTML=ui.page==='home'?view.home(state,ui):ui.page==='planner'?view.planner(state,ui):ui.page==='library'?view.library(ui):ui.page==='submission'?view.submission(ui):ui.page==='subjects'?view.subjects(state,ui):ui.page==='document'?view.documentView(state,ui):view.workspace(state,ui);}catch(e){main.innerHTML=`<section class="page"><h1>无法打开这项内容</h1><p>${h(e.message)}</p><a href="#subjects">返回学科空间</a></section>`;}
  if(ui.page==='home') {const sc=main.querySelector('.calendar-scroll');sc.scrollTop=ui.calendarScroll??Math.max(0,(new Date().getHours()-2)*64);}
 }
-async function refreshFiles(){const version=routeVersion,domain=ui.page==='submission'?'submission':'private',subjectId=ui.subjectId;ui.fileLoading=true;ui.fileList=[];render();try{const list=await files.list(domain,subjectId);if(version===routeVersion){ui.fileList=list;ui.fileLoading=false;render();}}catch{if(version===routeVersion){ui.fileLoading=false;render();tell('无法读取本机文件，请检查浏览器存储权限。');}}}
+async function refreshFiles(){const version=routeVersion,domain=ui.page==='submission'?'submission':'private',subjectId=ui.subjectId;ui.fileLoading=true;ui.fileList=[];render();try{const list=await files.list(domain,subjectId);if(version===routeVersion){ui.fileList=list;ui.fileLoading=false;const target=main.querySelector('.resource-list');if(target&&isSessionActive())target.innerHTML=view.fileRows(list.filter(f=>domain==='submission'||f.name.toLowerCase().includes(ui.fileQuery.toLowerCase())),domain);}}catch{if(version===routeVersion){ui.fileLoading=false;render();tell('无法读取本机文件，请检查浏览器存储权限。');}}}
 function closeDialog(){dialog.close();if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null;}}
-function modal(title,body){closeDialog();dialog.innerHTML=`<header class="dialog-head"><h2 id="dialog-title">${h(title)}</h2>${btn('×','dialog-close','','icon-button')}</header><div class="dialog-body">${body}</div>`;dialog.showModal();}
+function modal(title,body){if(!isSessionActive())return false;closeDialog();dialog.innerHTML=`<header class="dialog-head"><h2 id="dialog-title">${h(title)}</h2>${btn('×','dialog-close','','icon-button')}</header><div class="dialog-body">${body}</div>`;dialog.showModal();return true;}
 async function route(){
+ if(!isSessionActive())return;
  captureDraft();if(ui.documentEditing&&ui.documentDraft)ui.documentDrafts[ui.documentId]=ui.documentDraft;routeVersion++;closeDialog();ui.historyOpen=false;ui.documentEditing=false;ui.documentDraft=null;
  let parts;try{parts=location.hash.slice(1).split('/').map(decodeURIComponent);}catch{tell('地址无效');go('home');return;}
  const [section,subjectId,tab,tail]=parts;
@@ -36,11 +39,11 @@ async function route(){
  if(ui.page==='document'&&ui.documentDrafts[ui.documentId]){ui.documentEditing=true;ui.documentDraft=ui.documentDrafts[ui.documentId];}
  render();if((ui.page==='workspace'&&ui.tab==='files')||(ui.page==='submission'&&ui.mySubmissions))await refreshFiles();
 }
-function download(name,body,type='text/plain;charset=utf-8'){const blob=body instanceof Blob?body:new Blob([body],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name.replace(/[<>:"/\\|?*\x00-\x1f]/g,'_');document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
+function download(name,body,type='text/plain;charset=utf-8'){if(!isSessionActive())return;const blob=body instanceof Blob?body:new Blob([body],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name.replace(/[<>:"/\\|?*\x00-\x1f]/g,'_');document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 function currentFile(file){return file&&(ui.page==='submission'?file.domain==='submission':ui.page==='workspace'&&ui.tab==='files'&&file.domain==='private'&&file.subjectId===ui.subjectId);}
-async function checkedFile(key){const f=await files.get(key);if(!currentFile(f))throw new Error('文件不存在或不属于当前页面');return f;}
+async function checkedFile(key){const f=await files.get(key);if(!isSessionActive())throw new Error('请先登录。');if(!currentFile(f))throw new Error('文件不存在或不属于当前页面');return f;}
 function validateFile(file){if(!(file instanceof File)||!file.name)throw new Error('请选择文件');if(file.size>50*1024*1024)throw new Error('单个文件最大50 MB，请选择更小的文件。');}
-async function openFile(f){modal(f.name,`<p class="muted">${Math.max(1,Math.ceil(f.size/1024))} KB · ${f.domain==='submission'?'投稿草稿，未送审':'私人文件'}</p>${f.description?`<p>${h(f.description)}</p>`:''}<div id="file-preview">正在读取…</div><div class="actions">${btn('下载原文件','file-download',f.id,'primary')}</div>`);
+async function openFile(f){if(!modal(f.name,`<p class="muted">${Math.max(1,Math.ceil(f.size/1024))} KB · ${f.domain==='submission'?'投稿草稿，未送审':'私人文件'}</p>${f.description?`<p>${h(f.description)}</p>`:''}<div id="file-preview">正在读取…</div><div class="actions">${btn('下载原文件','file-download',f.id,'primary')}</div>`))return;
  const target=dialog.querySelector('#file-preview');
  if(/^text\//.test(f.blob.type)||/\.(txt|md|csv|json|js|py|cpp|h|css|log)$/i.test(f.name)){target.textContent=(await f.blob.slice(0,250000).text())+(f.size>250000?'\n\n预览仅显示前250 KB，请下载查看完整内容。':'');target.className='file-text';}
  else if(/^image\/(png|jpeg|gif|webp)$/.test(f.blob.type)){previewUrl=URL.createObjectURL(f.blob);const image=document.createElement('img');image.src=previewUrl;image.alt=f.name;image.className='file-image';target.replaceChildren(image);}
@@ -54,7 +57,7 @@ document.addEventListener('click',async event=>{
  const b=event.target.closest('[data-action]');if(!b)return;const action=b.dataset.action,key=b.dataset.id;captureDraft();
  try{switch(action){
  case 'about':modal('关于此原型','<p>当前用于验收页面结构与交互。示例内容不是你的真实学习数据。</p><p>编辑的文本、聊天与添加的文件仅保存在当前浏览器，不会跨设备同步。真实 AI、文件上传和审核服务尚未接入。</p><p>回顾文档可下载备份；资料文件与投稿草稿相互独立。</p>');break;
- case 'backup':download('yixue-browser-backup.json',localStorage.getItem('yixue-user-prototype-v2')??'{}');break;
+ case 'backup':download('yixue-browser-backup.json',localStorage.getItem(STATE_KEY)??'{}');break;
  case 'notice-close':notice.hidden=true;break;
  case 'dialog-close':closeDialog();break;
  case 'undo':if(undo){const run=undo;await run();undo=null;notice.hidden=true;render();}break;
@@ -109,6 +112,6 @@ document.addEventListener('change',async event=>{const el=event.target;if(el.dat
 });
 dialog.addEventListener('close',()=>{if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null;}});
 window.addEventListener('hashchange',route);
-window.addEventListener('beforeunload',event=>{if(ui.documentEditing&&ui.documentDraft&&(ui.documentDraft.body!==doc()?.body||ui.documentDraft.title!==doc()?.title)){event.preventDefault();event.returnValue='';}});
-window.addEventListener('storage',event=>{if(event.key==='yixue-user-prototype-v2')tell('另一个窗口修改了数据。请刷新后继续，避免覆盖。');});
+window.addEventListener('beforeunload',event=>{if(isSessionActive()&&ui.documentEditing&&ui.documentDraft&&(ui.documentDraft.body!==doc()?.body||ui.documentDraft.title!==doc()?.title)){event.preventDefault();event.returnValue='';}});
+window.addEventListener('storage',event=>{if(event.key===STATE_KEY)tell('另一个窗口修改了数据。请刷新后继续，避免覆盖。');});
 route();

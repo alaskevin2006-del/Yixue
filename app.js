@@ -1,1 +1,1 @@
-import './client/main.js';
+import './client/auth.js';

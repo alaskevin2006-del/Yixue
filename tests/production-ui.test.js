@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+test('deployed UI copies match the approved local frontend',()=>{for(const path of ['index.html','app.js','styles.css',...['api','auth','session-state','main','storage','model','views','fixtures'].map(n=>'client/'+n+'.js')])assert.deepEqual(readFileSync(new URL('../'+path,import.meta.url)),readFileSync(new URL('../production/'+path,import.meta.url)),path);});

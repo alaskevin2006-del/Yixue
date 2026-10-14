@@ -20,7 +20,14 @@
 - 旧融合前端浏览器测试文件保留作历史证据；当前test:e2e使用根目录原型+登录检查，production/test继续验证原服务端与API客户端。
 
 ## 发布
-待线上版本核验后补充。
+- 2026-10-14 14:27（北京时间）已发布到 https://124.221.230.69/#home 。
+- 发布代码：1c1852b18e18c8cafd452a69a4aef4a54a34069d；线上 /version.json 已核验。
+- 11个前端文件（HTML、CSS、入口及全部相关模块）与本地Git提交SHA256一致，浏览器刷新后确认新版登录页可见。
+- /api/health 为ok，SESSION/SQLITE/AI/vision配置保持；/preview/保持旧原型2967424。
+- GitHub分支codex/local-prototype-login，PR https://github.com/alaskevin2006-del/Yixue/pull/4 。
+- 数据库与上传文件的一致性备份：/opt/yixue/backups/20261014T062421Z/data；同目录保留源码快照。
+- 回滚镜像：yixue-app:before-20261014t062421z；回滚只换代码，不回退用户数据。
+- 本次后续验收文档提交不修改已部署应用代码。
 
 ## 明确限制
 登录是真实服务器登录。此版本的学习文本、聊天、文件和投稿仍在当前浏览器中，AI没有接入这个界面，投稿不会真实送审；页面保留原型提示。旧服务器学习数据未删除，但没有接到这份原型界面中。

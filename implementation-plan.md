@@ -27,21 +27,21 @@
 ## Task 1: 状态边界及可测试基础
 Files: client/model.js, client/storage.js, client/fixtures.js, tests/model.test.js
 Interfaces: createInitialState(), reduce(state, action), scoped(state, subjectId), load/save storage.
-- [ ] 先写并运行隔离、文档CRUD、规划文本独立、取消与错误路径测试（先红后绿）。
-- [ ] 实现可持久化原型状态及独立文件存储。
-- [ ] 通过 node --test tests/model.test.js，提交。
+- [x] 先写并运行隔离、文档CRUD、规划文本独立、取消与错误路径测试（先红后绿）。
+- [x] 实现可持久化原型状态及独立文件存储。
+- [x] 通过 node --test tests/model.test.js，提交。
 
 ## Task 2: 用户页面及交互
 Files: index.html, app.js, styles.css, client/views.js
 Interfaces: render route from state; dispatch actions through model; files through IndexedDB adapter only.
-- [ ] 首页日/周和独立规划聊天、状态文本编辑。
-- [ ] 资料库/投稿内部页面、私人文件。
-- [ ] 学科隔离、对话、文档列表及编辑下载删除撤销。
-- [ ] 构建与浏览器桌面/手机自检，修复实际问题，提交。
+- [x] 首页日/周和独立规划聊天、状态文本编辑。
+- [x] 资料库/投稿内部页面、私人文件。
+- [x] 学科隔离、对话、文档列表及编辑下载删除撤销。
+- [x] 构建与浏览器桌面/手机自检，修复实际问题，提交。
 
 ## Task 3: 验证与发布
 Files: scripts/build.mjs, scripts/serve-product-demo.mjs, server/static.js, tests/backend/*.test.js, acceptance-report.md
-- [ ] 保持既有本地API可用；增加必要后端回归测试，运行全部已有命令。
-- [ ] 全分支独立审查并修复重要问题。
-- [ ] 推送已验证分支，创建草稿PR；按确认的服务器目标更新静态原型并验证线上版本。
-- [ ] 记录测试、桌面/手机检查、GitHub与线上地址及限制，准备12:00验收。
+- [x] 保持既有本地API可用；增加必要后端回归测试，运行全部已有命令。
+- [x] 全分支独立审查并修复重要问题。
+- [x] 推送已验证分支，创建草稿PR；按确认的服务器目标更新静态原型并验证线上版本。
+- [x] 记录测试、桌面/手机检查、GitHub与线上地址及限制，准备12:00验收。

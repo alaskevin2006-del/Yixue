@@ -2,7 +2,9 @@
 
 验收目标：2026-10-14 12:00（北京时间）。
 分支：codex/user-prototype-review。基线：main / 9fa6998。
-预定服务器入口：https://124.221.230.69/preview/ （发布结果见实施进度）
+服务器验收入口：https://124.221.230.69/preview/
+GitHub草稿PR：https://github.com/alaskevin2006-del/Yixue/pull/2
+线上版本：https://124.221.230.69/preview/version.json
 
 ## 本轮交付
 - 首页以日程为主体，保留日 / 周切换和安排编辑。
@@ -19,6 +21,13 @@
 - 复审修复：空学科草稿串入、下载误触发提交、添加文件无法键盘触达。对应回归检查通过。
 - 桌面截图：acceptance/home.png、planner.png、review.png、document.png、files.png、library.png；手机：mobile-review.png（本地验收产物，不进入构建）。
 - legacy/三个前端文件与基线内容哈希一致，原本地Conversation API继续使用该前端。
+
+## 线上结果
+- 已成功发布独立验收路径；逐文件SHA256校验通过。
+- 线上六个主要页面打开成功，无页面脚本错误或失败资源请求。
+- 原站 /api/health 发布前后均为 ok，SESSION / SQLITE / AI / vision 能力保持，应用容器ID未改变。
+- GitHub文件树与本地提交完全一致；普通Git网络超时，使用已连接GitHub服务发布。
+- 11:00、11:30继续自检，12:00汇总验收后暂停自动任务。
 
 ## 验收顺序
 1. 首页切换日/周，添加并编辑一项安排。

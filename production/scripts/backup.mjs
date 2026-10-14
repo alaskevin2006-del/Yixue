@@ -31,8 +31,11 @@ function checkDatabase(path) {
     if(db.prepare('PRAGMA foreign_key_check').get())throw Error('Database foreign key check failed.');
     const tables=new Set(db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(r=>r.name));
     const files=[];
-    if(tables.has('resources'))files.push(...db.prepare('SELECT storage_key FROM resources WHERE deleted_at IS NULL AND storage_key IS NOT NULL').all().map(r=>r.storage_key));
-    if(tables.has('resource_submissions'))files.push(...db.prepare('SELECT storage_key FROM resource_submissions').all().map(r=>r.storage_key));
+    if(tables.has('resources'))files.push(...db.prepare('SELECT storage_key FROM resources WHERE storage_key IS NOT NULL').all().map(r=>r.storage_key));
+    if(tables.has('resource_submissions')){
+      const withdrawn=db.prepare('PRAGMA table_info(resource_submissions)').all().some(c=>c.name==='deleted_at');
+      files.push(...db.prepare('SELECT storage_key FROM resource_submissions'+(withdrawn?' WHERE deleted_at IS NULL':'')).all().map(r=>r.storage_key));
+    }
     return files;
   } finally {db.close();}
 }

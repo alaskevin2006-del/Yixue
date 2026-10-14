@@ -1,0 +1,5 @@
+# Inside existing site block, ahead of root catch-all; preserve /preview/.
+redir /test /test/ 308
+handle_path /test/* {
+    reverse_proxy test:3000
+}

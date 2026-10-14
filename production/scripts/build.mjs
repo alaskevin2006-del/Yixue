@@ -25,6 +25,7 @@ function copyDirectory(source,target){
   }
 }
 copyDirectory(join(root, 'client'), join(dist, 'client'));
+copyDirectory(join(root, 'admin'), join(dist, 'admin'));
 const vendor=join(dist,'vendor');mkdirSync(vendor,{recursive:true});
 copyFileSync(join(root,'node_modules/marked/lib/marked.esm.js'),join(vendor,'marked.esm.js'));
 copyFileSync(join(root,'node_modules/dompurify/dist/purify.es.mjs'),join(vendor,'purify.es.mjs'));
@@ -32,4 +33,4 @@ copyDirectory(join(root,'node_modules/katex/dist'),join(vendor,'katex'));
 
 console.log(`Built ${files.length} files into dist/`);
 
-writeFileSync(join(dist,'version.json'),JSON.stringify({revision:process.env.YIXUE_REVISION||'development',builtAt:new Date().toISOString(),product:'local-prototype-with-login'}));
+writeFileSync(join(dist,'version.json'),JSON.stringify({revision:process.env.YIXUE_REVISION||'development',builtAt:new Date().toISOString(),product:'connected-learning-service'}));

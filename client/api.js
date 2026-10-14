@@ -18,7 +18,7 @@ export function createApi(fetcher = globalThis.fetch) {
     const generation=authGeneration;
     const ensureCurrent=()=>{if(generation!==authGeneration)throw new DOMException('账户已变化','AbortError');};
     let response;
-    try {response = await fetcher(path, {method, credentials:'same-origin', signal,
+    try {response = await fetcher(apiPath(path), {method, credentials:'same-origin', signal,
       headers, body:body === undefined ? undefined : multipart ? body : JSON.stringify(body)});}
     catch(error){ensureCurrent();if(error.name==='AbortError')throw error;throw new ApiError('连接暂时中断，请检查网络后重试。','NETWORK_ERROR',0);}
     ensureCurrent();
@@ -31,7 +31,19 @@ export function createApi(fetcher = globalThis.fetch) {
     return data;
   };
   api.resetSession=()=>{authGeneration++;csrfToken='';};
+  api.blob=async function(path){
+    const generation=authGeneration;
+    const response=await fetcher(apiPath(path),{credentials:'same-origin'});
+    const ensure=()=>{if(generation!==authGeneration)throw new DOMException('账户已变化','AbortError');};
+    ensure();if(!response.ok){const data=await response.json().catch(()=>({}));ensure();throw new ApiError(data.error?.message||'文件下载失败',data.error?.code,response.status);}
+    const blob=await response.blob();ensure();return blob;
+  };
   return api;
+}
+export function apiPath(path){
+  if(!path.startsWith('/api/'))throw new Error('Unsupported API path');
+  const base=typeof location==='undefined'?'':new URL('../',import.meta.url).pathname.replace(/\/$/,'');
+  return base+path;
 }
 export const api = createApi();
 export const id = value => encodeURIComponent(value);

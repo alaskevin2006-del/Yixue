@@ -1,3 +1,4 @@
+import {initAudit,audit} from './audit.js';
 import { randomBytes, randomUUID, createHash, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { HttpError } from './errors.js';
@@ -28,9 +29,9 @@ export async function bootstrapAdmin(store,config) {
   store.transaction(()=>{store.run('INSERT INTO user_principals(id,created_at) VALUES (?,?)',id,at);store.run('INSERT INTO users(id,username,password_hash,role,created_at) VALUES (?,?,?,?,?)',id,name,hash,'admin',at);});
 }
 export function createAuth(store,config) {
-  const attempts=new Map();
-  const cookieName='yixue_session';
-  function cookie(token,clear=false){return `${cookieName}=${token}; Path=/; HttpOnly; SameSite=Strict; ${config.secureCookies?'Secure; ':''}Max-Age=${clear?0:Math.floor((config.sessionTtlMs??604800000)/1000)}`;}
+  initAudit(store); const attempts=new Map();
+  const cookieName=config.cookieName??'yixue_session';
+  function cookie(token,clear=false){return `${cookieName}=${token}; Path=${config.cookiePath??'/'}; HttpOnly; SameSite=Strict; ${config.secureCookies?'Secure; ':''}Max-Age=${clear?0:Math.floor((config.sessionTtlMs??604800000)/1000)}`;}
   function readSession(req){
     const token=(req.headers.cookie??'').split(';').map(s=>s.trim()).find(s=>s.startsWith(cookieName+'='))?.slice(cookieName.length+1);
     if(!token||!/^[a-f0-9]{64}$/.test(token))return null;
@@ -44,6 +45,7 @@ export function createAuth(store,config) {
     if(req.headers.origin!==expected)throw new HttpError(403,'ORIGIN_DENIED','请求来源不受支持。');
   }
   function mutation(req){origin(req);const session=readSession(req);const value=req.headers['x-csrf-token'];if(!session||typeof value!=='string'||Buffer.byteLength(value)!==Buffer.byteLength(session.csrf_token)||!timingSafeEqual(Buffer.from(value),Buffer.from(session.csrf_token)))throw new HttpError(403,'CSRF_DENIED','请求验证已失效，请重新登录。');}
+  function currentAdmin(req,principal){const session=readSession(req);if(!session||session.user_id!==principal.id||session.role!=='admin')throw new HttpError(401,'AUTH_REQUIRED','登录已失效，请重新登录。');}
   async function handle(ctx){
     const {method,path,req,principal,body}=ctx;
     if(path==='/api/auth/login'&&method==='POST'){
@@ -75,7 +77,7 @@ export function createAuth(store,config) {
         const input=await body(),name=username(input.username),role=input.role??'user';if(!['user','admin'].includes(role))throw new HttpError(400,'INVALID_ROLE','账号角色无效。');
         const hash=await hashPassword(input.password),id=randomUUID(),at=new Date().toISOString();
         if(store.get('SELECT id FROM users WHERE username=?',name))throw new HttpError(409,'USERNAME_EXISTS','用户名已存在。');
-        store.transaction(()=>{store.run('INSERT INTO user_principals VALUES (?,?)',id,at);store.run('INSERT INTO users(id,username,password_hash,role,created_at) VALUES (?,?,?,?,?)',id,name,hash,role,at);});
+        store.transaction(()=>{currentAdmin(req,principal);store.run('INSERT INTO user_principals VALUES (?,?)',id,at);store.run('INSERT INTO users(id,username,password_hash,role,created_at) VALUES (?,?,?,?,?)',id,name,hash,role,at);audit(store,principal,'account.create','user',id);});
         return{status:201,body:{user:{id,username:name,role}}};
       }
       const account=path.match(/^\/api\/admin\/users\/([^/]+)$/);
@@ -88,12 +90,12 @@ export function createAuth(store,config) {
           if(!store.get("SELECT id FROM users WHERE id=? AND disabled=0 AND role='admin'",principal.id))throw new HttpError(401,'ACCOUNT_DISABLED','账号不可用。');
           if(input.disabled&&target.role==='admin'&&!target.disabled&&store.get("SELECT COUNT(*) AS count FROM users WHERE role='admin' AND disabled=0").count<=1)throw new HttpError(409,'LAST_ADMIN','至少保留一个可用管理员。');
           store.run('UPDATE users SET disabled=? WHERE id=?',Number(input.disabled),target.id);
-          if(input.disabled)store.run('DELETE FROM sessions WHERE user_id=?',target.id);
+          if(input.disabled)store.run('DELETE FROM sessions WHERE user_id=?',target.id);audit(store,principal,input.disabled?'account.disable':'account.enable','user',target.id);
         });
         return{status:200,body:{user:{...target,disabled:Number(input.disabled)}}};
       }
       const match=path.match(/^\/api\/admin\/users\/([^/]+)\/password$/);
-      if(match&&method==='POST'){const input=await body();if(!store.get('SELECT id FROM users WHERE id=?',match[1]))throw new HttpError(404,'NOT_FOUND','账号不存在。');const hash=await hashPassword(input.password);store.transaction(()=>{store.run('UPDATE users SET password_hash=? WHERE id=?',hash,match[1]);store.run('DELETE FROM sessions WHERE user_id=?',match[1]);});return{status:204};}
+      if(match&&method==='POST'){const input=await body();if(!store.get('SELECT id FROM users WHERE id=?',match[1]))throw new HttpError(404,'NOT_FOUND','账号不存在。');const hash=await hashPassword(input.password);store.transaction(()=>{currentAdmin(req,principal);store.run('UPDATE users SET password_hash=? WHERE id=?',hash,match[1]);store.run('DELETE FROM sessions WHERE user_id=?',match[1]);audit(store,principal,'account.password_reset','user',match[1]);});return{status:204};}
     }
     return null;
   }

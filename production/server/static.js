@@ -8,15 +8,18 @@ const files = new Map([
   ["/index.html", ["index.html", "text/html; charset=utf-8"]],
   ["/app.js", ["app.js", "text/javascript; charset=utf-8"]],
   ["/styles.css", ["styles.css", "text/css; charset=utf-8"]],
+  ["/admin/", ["admin/index.html", "text/html; charset=utf-8"]],
+  ["/admin/index.html", ["admin/index.html", "text/html; charset=utf-8"]],
 ]);
 
 export async function serveFrontend(req, res, path, root) {
+  if(path==='/admin'){res.writeHead(302,{location:'admin/'}).end();return;}
   let decoded;
   try { decoded = decodeURIComponent(path.split('?')[0]); } catch { res.writeHead(404).end('Not found'); return; }
   if(decoded.includes('\\') || decoded.includes('\0') || decoded.split('/').some(part=>part==='..'||part.startsWith('.'))) { res.writeHead(404).end('Not found'); return; }
   const assetTypes = {'.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf'};
   const extension=extname(decoded);
-  const asset = /^\/(client|vendor)\/[a-zA-Z0-9_./-]+$/.test(decoded) && assetTypes[extension];
+  const asset = /^\/(client|vendor|admin)\/[a-zA-Z0-9_./-]+$/.test(decoded) && assetTypes[extension];
   const file = files.get(decoded) ?? (asset ? [decoded.slice(1),asset] : null);
   if (!file) { res.writeHead(404).end("Not found"); return; }
   if (!["GET", "HEAD"].includes(req.method)) { res.writeHead(405, { allow: "GET, HEAD" }).end(); return; }

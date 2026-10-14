@@ -17,12 +17,12 @@ for (const file of files) {
   copyFileSync(join(root, file), join(dist, file));
 }
 
-for (const folder of ['client', 'legacy']) {
+for (const folder of ['client', 'legacy','admin']) {
   mkdirSync(join(dist, folder), { recursive: true });
   for (const file of readdirSync(join(root, folder))) copyFileSync(join(root, folder, file), join(dist, folder, file));
 }
 let revision = 'uncommitted';
 try { revision = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(); } catch {}
-writeFileSync(join(dist, 'version.json'), JSON.stringify({ revision, builtAt: new Date().toISOString(), mode: 'browser-prototype' }));
+writeFileSync(join(dist, 'version.json'), JSON.stringify({ revision, builtAt: new Date().toISOString(), mode: 'connected-service' }));
 
 console.log('Built user prototype, client modules, version and preserved local frontend into dist/');

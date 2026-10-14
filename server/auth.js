@@ -78,6 +78,20 @@ export function createAuth(store,config) {
         store.transaction(()=>{store.run('INSERT INTO user_principals VALUES (?,?)',id,at);store.run('INSERT INTO users(id,username,password_hash,role,created_at) VALUES (?,?,?,?,?)',id,name,hash,role,at);});
         return{status:201,body:{user:{id,username:name,role}}};
       }
+      const account=path.match(/^\/api\/admin\/users\/([^/]+)$/);
+      if(account&&method==='PATCH'){
+        const input=await body();if(typeof input.disabled!=='boolean')throw new HttpError(400,'INVALID_DISABLED','停用状态必须为布尔值。');
+        const target=store.get('SELECT id,username,role,disabled,created_at FROM users WHERE id=?',account[1]);if(!target)throw new HttpError(404,'NOT_FOUND','账号不存在。');
+        if(target.id===principal.id&&input.disabled)throw new HttpError(409,'SELF_DISABLE','不能停用当前登录账号。');
+        store.transaction(()=>{
+          const session=readSession(req);if(!session||session.user_id!==principal.id||session.role!=='admin')throw new HttpError(401,'AUTH_REQUIRED','登录已失效，请重新登录。');
+          if(!store.get("SELECT id FROM users WHERE id=? AND disabled=0 AND role='admin'",principal.id))throw new HttpError(401,'ACCOUNT_DISABLED','账号不可用。');
+          if(input.disabled&&target.role==='admin'&&!target.disabled&&store.get("SELECT COUNT(*) AS count FROM users WHERE role='admin' AND disabled=0").count<=1)throw new HttpError(409,'LAST_ADMIN','至少保留一个可用管理员。');
+          store.run('UPDATE users SET disabled=? WHERE id=?',Number(input.disabled),target.id);
+          if(input.disabled)store.run('DELETE FROM sessions WHERE user_id=?',target.id);
+        });
+        return{status:200,body:{user:{...target,disabled:Number(input.disabled)}}};
+      }
       const match=path.match(/^\/api\/admin\/users\/([^/]+)\/password$/);
       if(match&&method==='POST'){const input=await body();if(!store.get('SELECT id FROM users WHERE id=?',match[1]))throw new HttpError(404,'NOT_FOUND','账号不存在。');const hash=await hashPassword(input.password);store.transaction(()=>{store.run('UPDATE users SET password_hash=? WHERE id=?',hash,match[1]);store.run('DELETE FROM sessions WHERE user_id=?',match[1]);});return{status:204};}
     }

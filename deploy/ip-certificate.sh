@@ -31,7 +31,7 @@ if [[ "$mode" == 'issue' ]]; then
     --cert-name yixue-ip --non-interactive --agree-tos --register-unsafely-without-email "${options[@]}"
 else
   options=()
-  if [[ "${2:-}" == '--dry-run' ]]; then options+=(--dry-run); elif [[ -n "${2:-}" ]]; then echo 'Unknown option.' >&2; exit 2; fi
+  if [[ "${2:-}" == '--dry-run' ]]; then options+=(--dry-run --no-random-sleep-on-renew); elif [[ -n "${2:-}" ]]; then echo 'Unknown option.' >&2; exit 2; fi
   docker run --rm "${mounts[@]}" "$certbot_image" renew --cert-name yixue-ip \
     --webroot --webroot-path /var/www/acme --non-interactive "${options[@]}"
   if [[ "${2:-}" != '--dry-run' ]]; then

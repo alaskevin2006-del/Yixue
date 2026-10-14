@@ -56,4 +56,18 @@
 
 ## 已知部署前置条件
 
-本文件提供可执行配置，不代表已完成远程部署。实际服务器网络、操作系统、模型服务和证书需在验收记录中记录真实结果。不要复用测试账号或测试模型启动生产版本。
+实际部署验收见 `engineering/acceptance.md`。不要复用测试模型启动生产版本。
+
+## 当前服务器运维
+
+线上地址为 `https://124.221.230.69/`，目录 `/opt/yixue`，使用两个 Compose 文件。管理员初始密码保留在服务器权限600的 `.env`，不提交到GitHub。模型密钥仍按用户要求留空。
+
+IP访问的TLS客户端通常不发送SNI，Docker监听地址又是私有IP，因此 `Caddyfile.ip` 明确设置 `default_sni` 为公开IP。已用未关闭证书验证的curl和真实浏览器确认。参考：[Caddy全局配置](https://caddyserver.com/docs/caddyfile/options#default-sni)。
+
+`yixue-backup.timer` 每天04:30 UTC（北京时间12:30）运行 `backup-server.sh`。脚本短暂停止app，使用当前应用镜像成对备份SQLite和文件，然后重新启动；失败路径也会尝试启动app。SQLite校验可能创建WAL/SHM，因此停止写入后备份源挂载可写。备份目录 `/opt/yixue/deploy-data/backups`，归档附SHA256。当前保留全部快照，定期关注磁盘空间。证书与密钥不进入这些业务数据归档；`.env`需另行安全保管。
+
+异机副本存放在本机 `C:/Users/Kevin/Yixue-backups`，目录访问限制为当前用户和SYSTEM。Windows计划任务 `Yixue-Offsite-Backup` 每日13:00及用户登录时运行 `sync-backups.py`，补拉缺少的归档并检查SHA256。电脑必须开机、用户已登录且网络可用；关机期间服务器仍每日备份，下一次本机任务运行时补拉。SSH密钥在用户 `.ssh/yixue-deploy`，不在Git中。
+
+手动备份：`sudo systemctl start yixue-backup.service`。查看结果：`sudo journalctl -u yixue-backup.service -n 30`。本机手动同步：`python deploy/sync-backups.py --destination C:/Users/Kevin/Yixue-backups --key C:/Users/Kevin/.ssh/yixue-deploy`。
+
+填DeepSeek密钥：编辑服务器 `/opt/yixue/.env` 的 `YIXUE_AI_API_KEY`，再在该目录执行 `sudo docker compose -f compose.yaml -f compose.ip.yaml up -d --force-recreate app`（修改环境变量不能仅用restart）。之后实际验证模型回答/图片识别；此前不声称已通过真实模型验收。

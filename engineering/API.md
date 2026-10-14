@@ -9,6 +9,7 @@ POST /api/auth/logout -> 204.
 GET /api/auth/me -> {user:{id,username,role},csrfToken}.
 POST /api/auth/password {currentPassword,newPassword} -> 204; revokes all user's sessions, login again.
 GET /api/admin/users -> {users}; POST {username,password,role} -> {user}.
+PATCH /api/admin/users/:id {disabled:boolean} -> {user}; administrator only, cannot disable self or last active administrator. Disabling revokes all target sessions; enabling requires a new login.
 POST /api/admin/users/:id/password {password} -> 204; revokes all target user's sessions.
 Passwords minimum 10 characters, maximum 256 bytes. Usernames 2–64 letters/numbers or _ . @ -, case-insensitive unique; role user|admin, default user. No public registration or default password. First administrator requires environment bootstrap credentials.
 GET/POST /api/subjects -> {subjects}/{subject}; POST {name}.

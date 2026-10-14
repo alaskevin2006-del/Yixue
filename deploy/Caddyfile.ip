@@ -1,5 +1,7 @@
 {
     auto_https disable_redirects
+    # IP clients omit SNI; Docker's private listener IP must not select the certificate.
+    default_sni {$SITE_ADDRESS}
 }
 
 http://{$SITE_ADDRESS} {

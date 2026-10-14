@@ -1,0 +1,9 @@
+[Unit]
+Description=Yixue consistent database and file backup
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/yixue
+ExecStart=/bin/bash /opt/yixue/deploy/backup-server.sh

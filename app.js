@@ -135,7 +135,12 @@ function account(){
 async function adminAccounts(){
   const panel=el('div');panel.append(el('h3','','开通账户'),form([field('用户名',{name:'username',required:true,maxLength:64}),field('初始密码（至少 10 位）',{name:'password',type:'password',required:true}),selectField('权限','role',[['user','用户'],['admin','管理员']])],'开通账户',async values=>{await api('/api/admin/users',{method:'POST',body:Object.fromEntries(values)});await adminAccounts();}));
   const {users}=await api('/api/admin/users');panel.append(el('h3','','已有账户'));
-  for(const user of users){const row=el('div','account-row');row.append(el('span','',`${user.username} · ${user.role==='admin'?'管理员':'用户'}`),button('重置密码',()=>modal(`重置 ${user.username} 的密码`,form([field('新密码（至少 10 位）',{name:'password',type:'password',required:true})],'重置密码',async values=>{await api(`/api/admin/users/${id(user.id)}/password`,{method:'POST',body:{password:values.get('password')}});if(user.id===state.user.id){endSession('密码已重置，请重新登录。');}else await adminAccounts();})),'text-link'));panel.append(row);}modal('账户管理',panel);
+  for(const user of users){
+    const row=el('div','account-row');
+    row.append(el('span','',`${user.username} · ${user.role==='admin'?'管理员':'用户'}${user.disabled?' · 已停用':''}`),button('重置密码',()=>modal(`重置 ${user.username} 的密码`,form([field('新密码（至少 10 位）',{name:'password',type:'password',required:true})],'重置密码',async values=>{await api(`/api/admin/users/${id(user.id)}/password`,{method:'POST',body:{password:values.get('password')}});if(user.id===state.user.id){endSession('密码已重置，请重新登录。');}else await adminAccounts();})),'text-link'));
+    if(user.id!==state.user.id)row.append(button(user.disabled?'启用账户':'停用账户',async()=>{await api(`/api/admin/users/${id(user.id)}`,{method:'PATCH',body:{disabled:!user.disabled}});await adminAccounts();},'text-link'));
+    panel.append(row);
+  }modal('账户管理',panel);
 }
 
 $$('[data-view-link]').forEach(node=>node.addEventListener('click',event=>{event.preventDefault();navigate(`/${node.dataset.viewLink}`);}));

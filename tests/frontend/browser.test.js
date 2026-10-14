@@ -77,6 +77,19 @@ for(const width of [390,320])test(`core learning and upload controls fit ${width
   await page.locator('[data-subject-tab=files]').click();await page.getByRole('button',{name:'上传资料',exact:true}).click();assert.ok(await page.evaluate(()=>document.querySelector('dialog[open]').getBoundingClientRect().right<=innerWidth));await page.screenshot({path:path.join(artifacts,`mobile-${width}-upload.png`),fullPage:true});
 });
 
+test('administrator can disable and re-enable an account from the account panel',async t=>{
+  const page=await pageFor(t);
+  const {data:{user}}=await mutation(page,'/api/admin/users','POST',{username:'toggle-browser',password:'test-password-strong'});
+  await page.locator('[data-account]').click();await page.getByRole('button',{name:'账户管理',exact:true}).click();
+  const row=page.locator('.account-row').filter({hasText:'toggle-browser'});
+  await row.getByRole('button',{name:'停用账户',exact:true}).click();
+  await row.getByRole('button',{name:'启用账户',exact:true}).waitFor({state:'visible'});
+  assert.equal(store.get('SELECT disabled FROM users WHERE id=?',user.id).disabled,1);
+  await row.getByRole('button',{name:'启用账户',exact:true}).click();
+  await row.getByRole('button',{name:'停用账户',exact:true}).waitFor({state:'visible'});
+  assert.equal(store.get('SELECT disabled FROM users WHERE id=?',user.id).disabled,0);
+});
+
 test('mobile action advice, library and state editing remain reachable at 320px',async t=>{
   const page=await pageFor(t,320);await subjectAndChat(page,'手机现状验证');await page.locator('[data-state-current]').click();await page.getByRole('button',{name:'直接编辑',exact:true}).click();await page.locator('[data-state-editor] textarea').fill('手机上记录的真实现状。');await page.getByRole('button',{name:'保存现状',exact:true}).click();await page.locator('.state-current-text').waitFor({state:'visible'});await page.screenshot({path:path.join(artifacts,'mobile-320-state.png'),fullPage:true});await page.locator('[data-state-close]').click();await page.getByRole('button',{name:'首页',exact:true}).click();await page.locator('[data-advice-input]').fill('现在有20分钟');await page.locator('[data-advice-form] button').click();await page.getByRole('button',{name:'采用为本次安排',exact:true}).click();await page.locator('[data-arrangement]').waitFor({state:'visible'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.equal(await page.locator('[data-advice-thread]').evaluate(node=>getComputedStyle(node).position),'static');await page.screenshot({path:path.join(artifacts,'mobile-320-home.png'),fullPage:true});await page.getByRole('button',{name:'资料库',exact:true}).click();await page.locator('[data-library-content] .resource-list').waitFor({state:'visible'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(artifacts,'mobile-320-library.png'),fullPage:true});
 });

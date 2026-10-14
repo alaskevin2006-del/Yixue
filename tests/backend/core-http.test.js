@@ -57,6 +57,22 @@ test('real sessions reject dev impersonation, enforce tenant isolation, CSRF and
   assert.equal((await other.call('/api/auth/me')).status,401);
 });
 
+test('administrator disables and re-enables accounts while revoking old sessions',async t=>{
+  const f=await setup(t),admin=f.client(),user=f.client();const me=await admin.login();
+  const created=await admin.call('/api/admin/users','POST',{username:'disable-test',password:'learner-password'});
+  const path=`/api/admin/users/${created.data.user.id}`;
+  await user.login('disable-test','learner-password');
+  assert.equal((await user.call(path,'PATCH',{disabled:true})).status,403);
+  assert.equal((await admin.call(path,'PATCH',{disabled:'true'})).status,400);
+  assert.equal((await admin.call(`/api/admin/users/${me.data.user.id}`,'PATCH',{disabled:true})).status,409);
+  assert.equal((await admin.call(path,'PATCH',{disabled:true})).status,200);
+  assert.equal((await user.call('/api/auth/me')).status,401);
+  assert.equal((await user.login('disable-test','learner-password')).status,401);
+  assert.equal((await admin.call(path,'PATCH',{disabled:false})).status,200);
+  assert.equal((await user.call('/api/auth/me')).status,401);
+  assert.equal((await user.login('disable-test','learner-password')).status,200);
+});
+
 test('messages persist across restart and request replay produces one assistant completion',async t=>{
   const f=await setup(t), c=f.client();await c.login(); const {subject,conversation:conv}=await conversation(c);
   assert.equal((await c.call(`/api/subjects/${subject.id}`,'PATCH',{icon:'∑'})).data.subject.icon,'∑');

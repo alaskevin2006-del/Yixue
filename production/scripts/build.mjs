@@ -27,6 +27,7 @@ function copyDirectory(source,target){
 copyDirectory(join(root, 'client'), join(dist, 'client'));
 copyDirectory(join(root, 'admin'), join(dist, 'admin'));
 const vendor=join(dist,'vendor');mkdirSync(vendor,{recursive:true});
+for(const name of ['pdf.mjs','pdf.worker.mjs'])copyFileSync(join(root,'node_modules/pdfjs-dist/build',name),join(vendor,name));
 copyFileSync(join(root,'node_modules/marked/lib/marked.esm.js'),join(vendor,'marked.esm.js'));
 copyFileSync(join(root,'node_modules/dompurify/dist/purify.es.mjs'),join(vendor,'purify.es.mjs'));
 copyDirectory(join(root,'node_modules/katex/dist'),join(vendor,'katex'));

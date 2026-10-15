@@ -18,7 +18,7 @@ export async function mutate(state,a){
  case 'chat.delete':return api(`/api/conversations/${enc(a.id)}`,{method:'DELETE'});
  case 'message.add':return post(`/api/conversations/${enc(a.id)}/messages`,{content:a.content,requestId:a.requestId});
  case 'planner.create':return (await post('/api/planner/records',{kind:'chat',title:'新对话'})).record.id;
- case 'planner.send':return post(`/api/planner/chats/${enc(a.id)}/messages`,{content:a.content,requestId:a.requestId});
+ case 'planner.send':return post(`/api/planner/chats/${enc(a.id)}/messages`,{content:a.content,requestId:a.requestId,proposalId:a.proposalId});
  case 'agenda.save':case 'planner.text':{const body=a.type==='agenda.save'?{kind:'agenda',title:a.title,date:a.date,start:a.start,end:a.end}:{kind:'text',title:a.name,content:a.body};return record?api(`/api/planner/records/${enc(a.id)}`,{method:'PATCH',body:{...body,version:a.version??record.version}}):post('/api/planner/records',body);}
  case 'agenda.delete':case 'planner.delete':return api(`/api/planner/records/${enc(a.id)}`,{method:'DELETE'});
  case 'document.delete':return api(`/api/memories/${enc(a.id)}`,{method:'DELETE'});

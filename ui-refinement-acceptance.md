@@ -32,3 +32,13 @@ GitHub：https://github.com/alaskevin2006-del/Yixue/pull/6
 历史空白对话没有自动清理。AI单次最多20项操作，可见最近100条独立日程/笔记；较长正文会截断供模型阅读，系统要求模型索取完整修改内容。PDF内置预览按页显示，未增加全文搜索/批注。现有同机备份、无异地副本和无邮件短信告警的运维限制仍以infrastructure-acceptance.md为准。
 
 本地原始收据（不包含在GitHub）：tmp/live-planner-actions.json、tmp/infrastructure-stage.json、tmp/infrastructure-promotion.json、tmp/infrastructure-verification.json；截图tmp/pdf-preview-server.png、tmp/planner-confirmed-server.png。
+
+## 2026-10-15 学习消息渲染与紧凑排版
+
+原因：当前聊天模板只转义原始文字，未调用已有安全渲染器；pre-wrap与1.9行高使原始Markdown空行直接占据阅读区。
+
+修复：学习助手消息接回Markdown/KaTeX，保留代码缩进、表格、列表和安全过滤；用户输入仍按原文显示，规划操作提案保留精确原文。正文15px（手机14px）行高1.6，段落间距8px，缩短消息、标题栏、侧栏与输入框占用。未改变数据存储及模块边界。
+
+验证：23前端、104后端、16浏览器测试通过；新增回归覆盖Markdown、公式、代码原文、恶意HTML/链接过滤、桌面密度及390px无横向溢出。测试站复用既有真实AI回答验收，不修改正式用户对话。
+
+正式站与/test/已于2026-10-15 18:37发布ba19ed60fefb5a2c872703fd22fc8b8b863204f4，外部health及版本核对通过；既有真实AI回答已显示编号列表和行内代码。备份恢复演练通过，定时检查与备份active。截图tmp/compact-chat-server.png、tmp/compact-chat-desktop.png、tmp/compact-chat-mobile.png。

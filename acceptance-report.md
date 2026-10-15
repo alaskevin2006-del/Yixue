@@ -1,4 +1,4 @@
-> 当前状态（2026-10-15）：本文下方是10月14日静态原型阶段的历史验收记录。用户随后授权接入完整服务并更新根站；当前正式站已发布51c2935，验收以 [页面与对话操作验收](ui-refinement-acceptance.md)、[基础设施验收](infrastructure-acceptance.md) 和 [真实文件验收](real-file-acceptance.md) 为准。/preview/仍为旧原型，正式入口为 https://124.221.230.69/ 。
+> 当前状态（2026-10-15）：本文下方是10月14日静态原型阶段的历史验收记录。用户随后授权接入完整服务并更新根站；当前正式站已发布ba19ed6（补上学习回答Markdown/公式渲染和紧凑排版），验收以 [页面与对话操作验收](ui-refinement-acceptance.md)、[基础设施验收](infrastructure-acceptance.md) 和 [真实文件验收](real-file-acceptance.md) 为准。/preview/仍为旧原型，正式入口为 https://124.221.230.69/ 。
 
 # 验收说明 · 用户端交互原型
 

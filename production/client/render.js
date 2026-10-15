@@ -1,7 +1,7 @@
 import {Marked} from '../vendor/marked.esm.js';
 import DOMPurify from '../vendor/purify.es.mjs';
 import katex from '../vendor/katex/katex.mjs';
-import {el} from './ui.js';
+const el=(tag,className='',text='')=>{const node=document.createElement(tag);node.className=className;node.textContent=text;return node;};
 
 const markdown=new Marked({breaks:true,gfm:true});
 const escapeHtml=value=>value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

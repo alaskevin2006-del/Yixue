@@ -1,5 +1,6 @@
 import {isSessionActive} from './session-state.js';
 import {showPdf} from './pdf-preview.js';
+import {richText} from './render.js';
 import {dateKey,scoped} from './model.js';
 import {STATE_KEY} from './storage.js';
 import {api} from './api.js';
@@ -32,6 +33,7 @@ function render(){
  if(loadError){main.innerHTML=`<section class="page"><h1>无法读取服务器数据</h1><p>${h(loadError.message)}</p><p>请检查网络后刷新。旧浏览器数据仍然保留。</p>${btn('下载原始数据','backup')}</section>`;return;}
  document.querySelectorAll('.topbar nav a').forEach(a=>{const section=ui.page==='planner'?'home':ui.page==='submission'?'library':ui.page==='workspace'||ui.page==='document'?'subjects':ui.page;const active=a.hash==='#'+section;a.classList.toggle('selected',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
  try{main.innerHTML=ui.page==='home'?view.home(state,ui):ui.page==='planner'?view.planner(state,ui):ui.page==='library'?view.library(ui):ui.page==='submission'?view.submission(ui):ui.page==='subjects'?view.subjects(state,ui):ui.page==='document'?view.documentView(state,ui):view.workspace(state,ui);}catch(e){main.innerHTML=`<section class="page"><h1>无法打开这项内容</h1><p>${h(e.message)}</p><a href="#subjects">返回学科空间</a></section>`;}
+ main.querySelectorAll('[data-rich-message]').forEach(node=>node.replaceChildren(richText(node.textContent)));
  const messageArea=main.querySelector('.messages');if(messageArea)messageArea.scrollTop=stick?messageArea.scrollHeight:scroll;
  if(focused){const field=document.getElementById(focused.id);if(field){field.focus({preventScroll:true});field.setSelectionRange(focused.start,focused.end);}}
  if(ui.page==='home') {const sc=main.querySelector('.calendar-scroll');sc.scrollTop=ui.calendarScroll??Math.max(0,(new Date().getHours()-2)*64);}

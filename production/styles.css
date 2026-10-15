@@ -8,3 +8,23 @@
 .event{padding:1px 7px;line-height:1.2}.event small{line-height:12px}.event strong{line-height:14px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 [hidden]{display:none!important}.login-shell{min-height:100dvh;display:grid;place-content:center;padding:32px 20px;gap:24px;background:var(--bg)}.login-brand{font-size:26px;font-weight:700;color:var(--ink);text-decoration:none}.login-brand small{font-size:15px;color:var(--muted);margin-left:8px}.login-card{width:min(100%,400px);background:white;border:1px solid var(--line);border-radius:12px;padding:32px}.login-card h1{font-size:26px;margin:0 0 10px}.login-card form{display:grid;gap:18px;margin-top:28px}.login-card label{display:grid;gap:8px;font-size:14px}.login-card input{width:100%;padding:12px;border:1px solid var(--line);border-radius:6px;font:inherit}.login-card form>.primary{width:100%;padding:12px}.login-card .footnote{max-width:36em;line-height:1.7}.login-card [role=alert]{color:#a43131;font-size:13px;margin:0}#account-exit{white-space:nowrap;color:var(--muted);font-size:12px;border:0;background:none;padding:8px}.topbar .prototype-badge{margin-left:auto}@media(max-width:700px){.login-shell{padding:24px 16px}.login-card{padding:24px}.topbar #account-exit{padding:4px;font-size:11px}.topbar .prototype-badge{display:none}}
 .account-controls{display:flex;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
+/* Compact workspaces retain the existing palette and controls. */
+.pdf-controls{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 0 12px}.pdf-canvas{display:block;width:100%;height:auto;border:1px solid var(--line);margin-bottom:12px}
+.workspace-page,.planner-page{max-width:1600px;padding:16px 28px 20px}
+.workspace-header,.submission-header{display:flex;align-items:center;gap:32px;border-bottom:1px solid #cbd5c6;padding-bottom:8px;margin-bottom:16px;min-width:0}
+.workspace-header .workspace-heading{margin:0;min-width:0}.workspace-heading h1{font-size:24px;overflow-wrap:anywhere}
+.workspace-header .tabs,.submission-header .tabs{border:0;margin:0;margin-left:auto;flex-shrink:0}.workspace-header .tabs a,.submission-header .tabs a{padding:12px 18px}
+.submission-header h1{margin:0;font-size:24px}.workspace-heading .back{margin-bottom:2px}
+.workspace-page .chat-layout,.planner-page .chat-layout{height:calc(100dvh - 190px);min-height:340px;margin-top:0;grid-template-columns:220px minmax(0,1fr);border-color:#cbd5c6}
+.chat-sidebar{padding:18px 14px;background:#f0f3ed;border-right:1px solid #cbd5c6;min-height:0;overflow:auto}
+.chat-main{padding:16px 22px 12px;min-height:0;overflow:hidden}.chat-heading{padding-bottom:10px;border-bottom:1px solid #e2e7df;flex-direction:row;align-items:center}.chat-heading h2{margin:0}
+.messages{min-height:0;padding:18px 0;overflow:auto;overscroll-behavior:contain}.messages .empty{text-align:left;padding:20px 8px;margin:0}.messages .empty p{font-size:17px}
+.composer{flex:none;border-color:#b8c6b1;background:#fcfdfb}.composer textarea{min-height:48px;max-height:140px}.chat-main>.footnote{margin-top:7px}
+.documents{width:100%;max-width:none;margin:0 0 30px;background:#fff;border:1px solid #d5ded0;border-radius:8px;padding:0 20px 12px}.documents .section-head{margin-top:16px}
+.workspace-page .document-list,.workspace-page .resource-list{width:100%}.documents .empty{padding:24px 8px;text-align:left}
+.course-grid .subject-card{text-align:left;justify-content:flex-start;white-space:normal}.course-grid .subject-card strong{overflow-wrap:anywhere}
+.day-column{cursor:crosshair}.day-column .event{cursor:pointer}
+@media(max-width:700px){
+ .workspace-page,.planner-page{padding:12px 12px 16px}.workspace-header,.submission-header{gap:8px;flex-wrap:wrap;margin-bottom:10px}.workspace-header .workspace-heading{flex:1;min-width:120px}.workspace-header .tabs,.submission-header .tabs{margin-left:0;gap:6px}.workspace-header .tabs a,.submission-header .tabs a{padding:8px 10px}.workspace-heading h1,.submission-header h1{font-size:21px}
+ .workspace-page .chat-layout,.planner-page .chat-layout{height:calc(100dvh - 210px);min-height:320px}.chat-main{padding:12px;min-height:0}.chat-sidebar{max-height:160px;border-right:0}.chat-heading{gap:8px;flex-wrap:wrap}.documents{padding:0 12px 10px}.documents .section-head{margin-top:12px}.messages .empty{padding:12px 4px}.course-grid .subject-card{justify-content:center;text-align:center}
+}

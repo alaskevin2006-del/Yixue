@@ -14,8 +14,8 @@ test('login failure, admin redirect, role barrier and logout',async({page})=>{
 test('day/week agenda and independent planning text persist in a second browser',async({page,browser})=>{
  const f=await setup(page);await page.goto('/');await expect(page.locator('.day-column')).toHaveCount(7);await page.getByRole('button',{name:'日',exact:true}).click();await expect(page.locator('.day-column')).toHaveCount(1);
  await page.getByRole('button',{name:'＋ 安排'}).click();await page.getByLabel('安排',{exact:true}).fill('跨设备安排');await page.getByRole('button',{name:'保存安排'}).click();await expect(page.getByRole('status')).toContainText('服务器');
- await page.getByRole('button',{name:'打开规划助手'}).click();await page.getByRole('button',{name:'学科状态',exact:true}).click();await page.getByRole('button',{name:'＋ 新建文本'}).click();await page.getByLabel('学科名称').fill('独立目标');await page.getByLabel('状态文本').fill('我手工维护的状态');await page.getByRole('button',{name:'保存文本'}).click();
- const other=await browser.newContext({baseURL});await login(other.request,f.name);const q=await other.newPage();await q.goto('/');await expect(q.locator('.event')).toContainText('跨设备安排');await q.goto('/#planner');await q.getByRole('button',{name:'学科状态',exact:true}).click();await q.getByRole('button',{name:'打开',exact:true}).click();await expect(q.getByLabel('状态文本')).toHaveValue('我手工维护的状态');await other.close();await f.admin.dispose();
+ await page.getByRole('button',{name:'打开规划助手'}).click();await page.getByRole('button',{name:'规划笔记',exact:true}).click();await page.getByRole('button',{name:'＋ 新建文本'}).click();await page.getByLabel('笔记名称').fill('独立目标');await page.getByLabel('笔记内容').fill('我手工维护的状态');await page.getByRole('button',{name:'保存文本'}).click();
+ const other=await browser.newContext({baseURL});await login(other.request,f.name);const q=await other.newPage();await q.goto('/');await expect(q.locator('.event')).toContainText('跨设备安排');await q.goto('/#planner');await q.getByRole('button',{name:'规划笔记',exact:true}).click();await q.getByRole('button',{name:'打开',exact:true}).click();await expect(q.getByLabel('笔记内容')).toHaveValue('我手工维护的状态');await other.close();await f.admin.dispose();
 });
 test('private original bytes, submission review and public archive/restore cross accounts',async({page,browser})=>{
  const f=await setup(page),course=(await call(f.admin,f.a.csrfToken,'/api/courses',{name:'文件课程'+randomUUID().slice(0,6)})).course;
@@ -44,4 +44,48 @@ test('administrator inspects readonly records and other-tab logout clears privat
 });
 for(const width of [320,390])test(`mobile ${width} main tasks remain reachable`,async({page})=>{
  const f=await setup(page);await page.setViewportSize({width,height:844});await page.goto('/#subjects/'+f.subject.id+'/learn');await expect(page.getByRole('textbox',{name:'学习输入'})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();await page.goto('/#subjects/'+f.subject.id+'/files');await expect(page.getByRole('button',{name:'添加文件'})).toBeVisible();await f.admin.dispose();
+});
+
+test('empty drafts do not accumulate; Enter sends and Ctrl+Enter inserts newline',async({page})=>{
+ const f=await setup(page);await page.goto('/#subjects/'+f.subject.id+'/learn');
+ for(let i=0;i<4;i++)await page.getByRole('button',{name:'＋ C++验收 新对话',exact:true}).click();
+ expect((await (await page.request.get('/api/subjects/'+f.subject.id+'/conversations')).json()).conversations).toHaveLength(0);
+ const input=page.getByRole('textbox',{name:'学习输入'});await input.fill('第一行');await input.press('Control+Enter');await input.press('a');await expect(input).toHaveValue('第一行\na');await input.press('Enter');
+ await expect(page.locator('.message.user')).toHaveText('第一行\na');expect((await (await page.request.get('/api/subjects/'+f.subject.id+'/conversations')).json()).conversations).toHaveLength(1);
+ await page.goto('/#planner');for(let i=0;i<3;i++)await page.getByRole('button',{name:'＋ 新对话',exact:true}).click();expect((await (await page.request.get('/api/planner')).json()).records.filter(r=>r.kind==='chat')).toHaveLength(0);await f.admin.dispose();
+});
+
+test('IME Enter does not send and a calendar click preselects date and time',async({page})=>{
+ const f=await setup(page);await page.goto('/#subjects/'+f.subject.id+'/learn');const input=page.getByRole('textbox',{name:'学习输入'});await input.fill('中文选字');await input.dispatchEvent('keydown',{key:'Enter',isComposing:true,keyCode:229,bubbles:true});expect((await (await page.request.get('/api/subjects/'+f.subject.id+'/conversations')).json()).conversations).toHaveLength(0);
+ await page.goto('/');await page.getByRole('button',{name:'日',exact:true}).click();await page.locator('.calendar-scroll').evaluate(el=>el.scrollTop=0);await page.locator('.day-column').click({position:{x:100,y:100}});await expect(page.getByLabel('开始',{exact:true})).toHaveValue('01:30');await expect(page.getByLabel('结束',{exact:true})).toHaveValue('02:00');await f.admin.dispose();
+});
+
+test('compact workspace headers, full width lists and course card navigation',async({page})=>{
+ const f=await setup(page),course=(await call(f.admin,f.a.csrfToken,'/api/courses',{name:'卡片课程'+randomUUID().slice(0,5)})).course;
+ await page.goto('/#subjects/'+f.subject.id+'/learn');const title=await page.locator('.workspace-heading').boundingBox(),tabs=await page.locator('.workspace-header .tabs').boundingBox();expect(Math.abs(title.y-tabs.y)).toBeLessThan(30);
+ const composer=await page.locator('.composer').boundingBox();expect(composer.y+composer.height).toBeLessThan(1000);
+ await page.goto('/#subjects/'+f.subject.id+'/review');const list=await page.locator('.documents').boundingBox(),header=await page.locator('.workspace-header').boundingBox();expect(Math.abs(list.x-header.x)).toBeLessThan(2);expect(list.width).toBeGreaterThan(header.width-3);
+ await page.goto('/#library');await expect(page.locator('.course-grid')).toBeVisible();await page.getByRole('button',{name:course.name,exact:true}).click();await expect(page).toHaveURL(new RegExp('library/'+course.id));await expect(page.getByRole('link',{name:'‹ 资料库',exact:true})).toBeVisible();
+ await page.goto('/#submission');await expect(page.locator('.submission-header .tabs')).toBeVisible();await f.admin.dispose();
+});
+
+test('real PDF renders pages without relying on the browser PDF plugin',async({page})=>{
+ test.setTimeout(60000);const f=await setup(page);await page.goto('/#subjects/'+f.subject.id+'/files');await page.locator('input[type=file]').setInputFiles('逸学视觉初版.pdf');await expect(page.getByRole('button',{name:/逸学视觉初版.pdf.*私人文件/})).toBeVisible({timeout:30000});await page.getByRole('button',{name:/逸学视觉初版.pdf.*私人文件/}).click();await expect(page.locator('#file-preview canvas')).toBeVisible();await expect(page.getByText('第 1 / 39 页',{exact:true})).toBeVisible();await page.getByRole('button',{name:'下一页',exact:true}).click();await expect(page.getByText('第 2 / 39 页',{exact:true})).toBeVisible();await f.admin.dispose();
+});
+
+test('planner preserves next draft while a response completes',async({page})=>{
+ const f=await setup(page);await page.goto('/#planner/new');let release,arrived;const pending=new Promise(resolve=>arrived=resolve),gate=new Promise(resolve=>release=resolve);
+ await page.route('**/api/planner/chats/*/messages',async route=>{arrived();await gate;await route.fulfill({status:200,contentType:'application/json',body:'{}'});});
+ const input=page.locator('textarea[name=content]');await input.fill('第一条消息');await input.press('Enter');await pending;await input.fill('AI回复期间写的下一条');release();await expect(page.getByRole('button',{name:'发送',exact:true})).toBeEnabled();await expect(input).toHaveValue('AI回复期间写的下一条');await f.admin.dispose();
+});
+
+test('last calendar slot stays within valid same-day time',async({page})=>{
+ const f=await setup(page);await page.goto('/');await page.getByRole('button',{name:'日',exact:true}).click();await page.locator('.day-column').evaluate(el=>{const r=el.getBoundingClientRect();el.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:r.left+20,clientY:r.top+23.75*64}));});await expect(page.getByLabel('开始',{exact:true})).toHaveValue('23:30');await expect(page.getByLabel('结束',{exact:true})).toHaveValue('23:59');await page.getByLabel('安排',{exact:true}).fill('深夜安排');await page.getByRole('button',{name:'保存安排'}).click();await expect(page.getByRole('dialog')).not.toBeVisible();await f.admin.dispose();
+});
+
+test('confirmation uses the displayed proposal even after background state reload',async({page})=>{
+ const f=await setup(page),chat=(await call(page.request,f.u.csrfToken,'/api/planner/records',{kind:'chat',title:'确认绑定'})).record;let current='A',sent;
+ await page.route('**/api/planner',async route=>{const response=await route.fetch(),data=await response.json();data.records=data.records.map(r=>r.id===chat.id?{...r,proposal:{id:current,status:'pending'},messages:[{role:'assistant',content:'待确认方案'+current}]}:r);await route.fulfill({response,json:data});});
+ await page.goto('/#planner/'+chat.id);await expect(page.locator('.messages')).toContainText('待确认方案A');current='B';await page.getByRole('button',{name:'规划笔记',exact:true}).click();await page.getByRole('button',{name:'＋ 新建文本'}).click();await page.getByLabel('笔记名称').fill('手动保存');await page.getByLabel('笔记内容').fill('触发状态刷新');await page.getByRole('button',{name:'保存文本'}).click();await expect(page.getByRole('dialog')).not.toBeVisible();await expect(page.locator('.messages')).toContainText('待确认方案A');
+ await page.route('**/api/planner/chats/*/messages',async route=>{sent=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:'{}'});});await page.locator('textarea[name=content]').fill('确认');await page.locator('textarea[name=content]').press('Enter');await expect.poll(()=>sent?.proposalId).toBe('A');await f.admin.dispose();
 });

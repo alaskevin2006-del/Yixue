@@ -22,6 +22,8 @@ for (const folder of ['client', 'legacy','admin']) {
   for (const file of readdirSync(join(root, folder))) copyFileSync(join(root, folder, file), join(dist, folder, file));
 }
 let revision = 'uncommitted';
+mkdirSync(join(dist,'vendor'),{recursive:true});
+for(const name of ['pdf.mjs','pdf.worker.mjs'])copyFileSync(join(root,'production/node_modules/pdfjs-dist/build',name),join(dist,'vendor',name));
 try { revision = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(); } catch {}
 writeFileSync(join(dist, 'version.json'), JSON.stringify({ revision, builtAt: new Date().toISOString(), mode: 'connected-service' }));
 

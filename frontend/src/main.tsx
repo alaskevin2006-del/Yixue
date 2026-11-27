@@ -17,6 +17,9 @@ import {
   UserLayout,
 } from "./app/layouts";
 import { Message } from "./components/ui";
+import "@fontsource-variable/newsreader";
+import "@fontsource-variable/plus-jakarta-sans";
+import "@fontsource-variable/jetbrains-mono";
 import "./styles.css";
 
 const Home = lazy(() => import("./pages/Home"));

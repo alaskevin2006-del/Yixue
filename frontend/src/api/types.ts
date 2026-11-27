@@ -22,6 +22,7 @@ export type Catalog = {
   resource_types: Category[];
   grades: Choice<Grade>[];
   semesters: Choice<Semester>[];
+  years?: number[];
 };
 export type Page<T> = {
   items: T[];
@@ -35,6 +36,7 @@ export type Attachment = {
   content_type: string;
   size_bytes: number;
   preview_supported: boolean;
+  download_supported?: boolean;
 };
 export type FileAccess = {
   url: string;
@@ -45,6 +47,7 @@ export type FileAccess = {
 };
 export type ResourceSummary = {
   id: string;
+  archive_code?: string;
   title: string;
   course: Category;
   colleges: Category[];
@@ -75,6 +78,7 @@ export type Dashboard = {
 export type RequestStatus = "open" | "completed" | "closed";
 export type RequestItem = {
   id: string;
+  archive_code?: string;
   title: string;
   description: string;
   status: RequestStatus;

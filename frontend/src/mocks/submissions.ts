@@ -55,6 +55,7 @@ export const requestItems: RequestItem[] = requestSamples.map(
     const course = courses[sample.course];
     return {
       id: `request-${index + 1}`,
+      archive_code: `REQ-${String(index + 1).padStart(3, "0")}`,
       title: sample.title,
       description: sample.description,
       status: sample.status,
@@ -132,7 +133,11 @@ export const submissionHandlers = [
         requestItems.filter(
           (item) =>
             item.status === status &&
-            item.title.toLowerCase().includes(keyword) &&
+            [
+              item.title,
+              item.course?.name ?? "",
+              ...item.colleges.map((college) => college.name),
+            ].some((field) => field.toLowerCase().includes(keyword)) &&
             (!colleges.length ||
               item.colleges.some((college) => colleges.includes(college.id))),
         ),
@@ -274,6 +279,7 @@ export const submissionHandlers = [
     const timestamp = new Date().toISOString();
     const item: ResourceDetail = {
       id: crypto.randomUUID(),
+      archive_code: `ARC-${String(resources.length + 1).padStart(3, "0")}`,
       title,
       colleges,
       course,

@@ -1,18 +1,35 @@
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Link2 } from "lucide-react";
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
+import {
+  archiveCode,
+  formatFileSize,
+  resourcePath,
+  resourceShareUrl,
+  reviewLabels,
+  semesterLabels,
+} from "../api/resourcePresentation";
 import { Message } from "../components/ui";
 import { DownloadButton } from "../components/DownloadButton";
 
 export default function ResourceDetail() {
   const { id = "" } = useParams();
+  const { hash } = useLocation();
+  const attachments = useRef<HTMLElement>(null);
   const [shareFeedback, setShareFeedback] = useState("");
   const details = useQuery({
     queryKey: ["resource", id],
     queryFn: ({ signal }) => api.resource(id, signal),
   });
+  const found = details.isSuccess;
+  useEffect(() => {
+    if (found && hash === "#resource-attachments") {
+      attachments.current?.focus({ preventScroll: true });
+      attachments.current?.scrollIntoView({ block: "start" });
+    }
+  }, [found, hash, id]);
 
   if (details.isPending) return <Message title="正在加载资料详情…" busy />;
   if (details.isError) {
@@ -24,7 +41,7 @@ export default function ResourceDetail() {
         action={
           missing ? (
             <Link className="button" to="/resources">
-              返回资料库
+              返回资料索引
             </Link>
           ) : (
             <button className="button" onClick={() => void details.refetch()}>
@@ -37,11 +54,8 @@ export default function ResourceDetail() {
   }
 
   const item = details.data;
-  const path = `/resources/${encodeURIComponent(item.id)}`;
-  const shareLink = new URL(
-    path,
-    import.meta.env.VITE_SITE_URL || window.location.origin,
-  ).href;
+  const path = resourcePath(item.id);
+  const shareLink = resourceShareUrl(item.id);
   const fields = [
     ["课程", item.course.name],
     ["适用学院", item.colleges.map((college) => college.name).join("、")],
@@ -51,14 +65,11 @@ export default function ResourceDetail() {
         .map((grade) => ["大一", "大二", "大三", "大四"][grade - 1])
         .join("、"),
     ],
-    [
-      "学期",
-      item.semester && (item.semester === "first" ? "上学期" : "下学期"),
-    ],
-    ["资料年份", item.year],
+    ["学期", item.semester && semesterLabels[item.semester]],
+    ["归档年份", item.year],
     ["来源", item.source],
     ["版本", item.version],
-    ["审核状态", item.review_status === "approved" ? "已审核" : "待审核"],
+    ["审核状态", reviewLabels[item.review_status]],
   ];
 
   async function copyLink() {
@@ -73,10 +84,15 @@ export default function ResourceDetail() {
   return (
     <article className="standard-page detail-page">
       <Link to="/resources" className="text-link">
-        资料库 / 资料详情
+        返回资料索引
       </Link>
-      <h1>{item.title}</h1>
-      <p className="type-label">{item.resource_type.name}</p>
+      <header className="editorial-header detail-heading">
+        <h1>{item.title}</h1>
+        <div className="archive-title-line">
+          <span className="archive-code">{archiveCode(item)}</span>
+          <span className="type-label">{item.resource_type.name}</span>
+        </div>
+      </header>
       <dl className="detail-fields">
         {fields.map(([label, value]) => (
           <div key={label}>
@@ -88,7 +104,13 @@ export default function ResourceDetail() {
       {item.description && (
         <p className="detail-description">{item.description}</p>
       )}
-      <section className="detail-section" aria-labelledby="file-heading">
+      <section
+        className="detail-section"
+        id="resource-attachments"
+        ref={attachments}
+        tabIndex={-1}
+        aria-labelledby="file-heading"
+      >
         <h2 id="file-heading">附件</h2>
         <ul className="panel file-list">
           {item.files.map((file) => (
@@ -96,11 +118,8 @@ export default function ResourceDetail() {
               <FileText size={20} aria-hidden="true" />
               <div className="file-info">
                 <span>{file.filename}</span>
-                <span className="muted">
-                  {new Intl.NumberFormat("zh-CN", {
-                    maximumFractionDigits: 1,
-                  }).format(file.size_bytes / 1024)}{" "}
-                  KB
+                <span className="muted archive-mono">
+                  {formatFileSize(file.size_bytes)}
                 </span>
               </div>
               <div className="file-actions">
@@ -109,10 +128,14 @@ export default function ResourceDetail() {
                     to={`${path}/preview/${encodeURIComponent(file.id)}`}
                     className="button"
                   >
-                    预览
+                    在线阅读
                   </Link>
                 )}
-                <DownloadButton resourceId={item.id} fileId={file.id} />
+                {file.download_supported === false ? (
+                  <span className="muted">附件暂不可用</span>
+                ) : (
+                  <DownloadButton resourceId={item.id} fileId={file.id} />
+                )}
               </div>
             </li>
           ))}

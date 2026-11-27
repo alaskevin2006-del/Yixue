@@ -8,15 +8,16 @@ import type { Catalog, Course } from "../api/types";
 import { Message, ResourceList, SearchBox } from "../components/ui";
 
 const filterNames = {
-  college_ids: "学院",
+  college_ids: "适用学院",
   course_ids: "课程",
-  grades: "年级",
+  grades: "适用年级",
   semesters: "学期",
   type_ids: "资料类型",
-  years: "资料年份",
+  years: "归档年份",
 };
 type Filter = keyof typeof filterNames;
 const filterKeys = Object.keys(filterNames) as Filter[];
+const catalogPageSize = 5;
 type Option = { value: string; label: string };
 const asOptions = (items: { id: string; name: string }[]) =>
   items.map(({ id, name }) => ({ value: id, label: name }));
@@ -34,7 +35,7 @@ function FilterGroup({
 }) {
   const selected = params.getAll(group);
   return (
-    <fieldset className="filter-group">
+    <fieldset className={`filter-group filter-${group}`}>
       <legend>{filterNames[group]}</legend>
       <div className="filter-options">
         {options.map(({ value, label }) => (
@@ -65,12 +66,52 @@ function FilterForm({
   onChange: (params: URLSearchParams, changedCollege?: boolean) => void;
   onCourseSearch: (value: string) => void;
 }) {
+  const years = [
+    ...new Set([
+      ...(catalog.years ?? []).map(String),
+      ...params.getAll("years"),
+    ]),
+  ].sort((a, b) => Number(b) - Number(a));
   function toggle(key: Filter, value: string) {
     const next = new URLSearchParams(params);
     if (next.getAll(key).includes(value)) next.delete(key, value);
     else next.append(key, value);
     onChange(next, key === "college_ids");
   }
+
+  const yearForm = (
+    <form
+      className="filter-group year-filter"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const value = String(
+          new FormData(event.currentTarget).get("year") ?? "",
+        );
+        if (!/^\d{4}$/.test(value) || params.getAll("years").includes(value))
+          return;
+        toggle("years", value);
+        event.currentTarget.reset();
+      }}
+    >
+      <label htmlFor="year">{years.length ? "其他归档年份" : "归档年份"}</label>
+      <div>
+        <input
+          id="year"
+          className="field"
+          name="year"
+          type="text"
+          inputMode="numeric"
+          placeholder="例如 2025"
+          pattern="[0-9]{4}"
+          maxLength={4}
+          required
+        />
+        <button className="button compact" type="submit">
+          添加
+        </button>
+      </div>
+    </form>
+  );
 
   return (
     <>
@@ -80,22 +121,6 @@ function FilterForm({
         params={params}
         onToggle={toggle}
       />
-      <div className="course-filter">
-        <input
-          className="field"
-          type="search"
-          placeholder="搜索课程"
-          aria-label="搜索筛选课程"
-          onChange={(event) => onCourseSearch(event.target.value.trim())}
-        />
-        <FilterGroup
-          group="course_ids"
-          options={asOptions(courses)}
-          params={params}
-          onToggle={toggle}
-        />
-        {!courses.length && <p className="muted">没有匹配的课程</p>}
-      </div>
       <FilterGroup
         group="type_ids"
         options={asOptions(catalog.resource_types)}
@@ -111,55 +136,49 @@ function FilterForm({
         params={params}
         onToggle={toggle}
       />
-      <FilterGroup
-        group="semesters"
-        options={catalog.semesters}
-        params={params}
-        onToggle={toggle}
-      />
-      <form
-        className="filter-group year-filter"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const value = String(
-            new FormData(event.currentTarget).get("year") ?? "",
-          );
-          if (!/^\d{4}$/.test(value) || params.getAll("years").includes(value))
-            return;
-          toggle("years", value);
-          event.currentTarget.reset();
-        }}
+      {years.length > 0 && (
+        <FilterGroup
+          group="years"
+          options={years.map((year) => ({ value: year, label: year }))}
+          params={params}
+          onToggle={toggle}
+        />
+      )}
+      {years.length === 0 && yearForm}
+      <details
+        className="filter-more"
+        open={
+          Boolean(
+            params.getAll("course_ids").length ||
+            params.getAll("semesters").length,
+          ) || undefined
+        }
       >
-        <label htmlFor="year">资料年份</label>
-        <div>
+        <summary>更多筛选</summary>
+        <div className="course-filter">
           <input
-            id="year"
             className="field"
-            name="year"
-            type="text"
-            inputMode="numeric"
-            placeholder="例如 2025"
-            pattern="[0-9]{4}"
-            maxLength={4}
-            required
+            type="search"
+            placeholder="检索课程"
+            aria-label="搜索筛选课程"
+            onChange={(event) => onCourseSearch(event.target.value.trim())}
           />
-          <button className="button compact" type="submit">
-            添加
-          </button>
+          <FilterGroup
+            group="course_ids"
+            options={asOptions(courses)}
+            params={params}
+            onToggle={toggle}
+          />
+          {!courses.length && <p className="muted">没有匹配的课程</p>}
         </div>
-        {params.getAll("years").map((year) => (
-          <button
-            type="button"
-            className="chip"
-            key={year}
-            onClick={() => toggle("years", year)}
-            aria-label={`移除年份 ${year}`}
-          >
-            {year}
-            <X size={14} />
-          </button>
-        ))}
-      </form>
+        <FilterGroup
+          group="semesters"
+          options={catalog.semesters}
+          params={params}
+          onToggle={toggle}
+        />
+        {years.length > 0 && yearForm}
+      </details>
     </>
   );
 }
@@ -174,7 +193,9 @@ export default function Resources() {
   const searchTimer = useRef<number | undefined>(undefined);
   const latestParams = useRef(params);
   const catalog = useQuery(catalogQuery);
-  const results = useQuery(resourcesQuery(params.toString()));
+  const pageParams = new URLSearchParams(params);
+  pageParams.set("page_size", String(catalogPageSize));
+  const results = useQuery(resourcesQuery(pageParams.toString()));
   const courseParams = new URLSearchParams({ page_size: "100" });
   const activeFilters = draft ?? params;
   for (const id of activeFilters.getAll("college_ids"))
@@ -313,8 +334,11 @@ export default function Resources() {
 
   return (
     <section className="standard-page library-page">
-      <div className="library-top">
-        <h1>学习资料库</h1>
+      <div className="editorial-header library-top">
+        <div>
+          <h1>学习资料档案库</h1>
+          <p>收录中山大学五个信息类学院的历年真题、课程讲义与复习笔记。</p>
+        </div>
         <SearchBox
           initialValue={keyword}
           onSearch={search}
@@ -328,14 +352,48 @@ export default function Resources() {
         />
       </div>
       <div className="library-grid">
-        <aside className="panel filter-sidebar" aria-label="筛选资料">
-          <h2>筛选资料</h2>
+        <aside className="filter-sidebar" aria-label="编目筛选">
           {!draft && filterContent}
         </aside>
-        <div className="results">
+        <section className="results" aria-labelledby="archive-results">
           <div className="results-toolbar">
-            <h2>{total === undefined ? "搜索结果" : `${total} 份资料`}</h2>
+            {chosen.length > 0 && (
+              <div className="chosen-filters" aria-label="已选筛选条件">
+                <span className="filter-caption">已选编目</span>
+                {chosen.map(({ key, value }) => {
+                  const label =
+                    labels[key]?.find((option) => option.value === value)
+                      ?.label ?? value;
+                  return (
+                    <button
+                      className="chip"
+                      type="button"
+                      key={`${key}:${value}`}
+                      aria-label={`移除${filterNames[key]} ${label}`}
+                      onClick={() => {
+                        const next = new URLSearchParams(latestParams.current);
+                        next.delete(key, value);
+                        updateFilters(next, key === "college_ids");
+                      }}
+                    >
+                      {label}
+                      <X size={14} aria-hidden="true" />
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  className="text-link"
+                  onClick={clearFilters}
+                >
+                  清除筛选
+                </button>
+              </div>
+            )}
             <div className="results-controls">
+              <h2 className="archive-results-count" id="archive-results">
+                {total === undefined ? "检索结果" : `${total} 份资料`}
+              </h2>
               <button
                 type="button"
                 className="button compact mobile-filter"
@@ -359,48 +417,16 @@ export default function Resources() {
                   commit(next);
                 }}
               >
-                <option value="latest">最新上传</option>
-                <option value="year_desc">资料年份</option>
-                <option value="popular">下载请求次数</option>
+                <option value="latest">最新归档</option>
+                <option value="year_desc">年份降序</option>
+                <option value="popular">下载热度</option>
               </select>
             </div>
           </div>
-          {chosen.length > 0 && (
-            <div className="chosen-filters" aria-label="已选筛选条件">
-              {chosen.map(({ key, value }) => {
-                const label =
-                  labels[key]?.find((option) => option.value === value)
-                    ?.label ?? value;
-                return (
-                  <button
-                    className="chip"
-                    type="button"
-                    key={`${key}:${value}`}
-                    aria-label={`移除${filterNames[key]} ${label}`}
-                    onClick={() => {
-                      const next = new URLSearchParams(latestParams.current);
-                      next.delete(key, value);
-                      updateFilters(next, key === "college_ids");
-                    }}
-                  >
-                    {label}
-                    <X size={14} aria-hidden="true" />
-                  </button>
-                );
-              })}
-              <button
-                type="button"
-                className="text-link"
-                onClick={clearFilters}
-              >
-                清除筛选
-              </button>
-            </div>
-          )}
           <p className="filter-notice" role="status">
             {notice}
           </p>
-          <div className="panel">
+          <div className="panel archive-panel">
             {results.isPending && <Message title="正在加载资料…" busy />}
             {results.isError && (
               <Message
@@ -417,7 +443,7 @@ export default function Resources() {
             )}
             {results.data &&
               (results.data.items.length ? (
-                <ResourceList items={results.data.items} />
+                <ResourceList items={results.data.items} catalog />
               ) : (
                 <Message
                   title="没有找到符合条件的资料"
@@ -439,27 +465,32 @@ export default function Resources() {
               ))}
           </div>
           {pages > 1 && (
-            <nav className="pagination" aria-label="资料分页">
-              <button
-                className="button"
-                disabled={page <= 1}
-                onClick={() => goToPage(page - 1)}
-              >
-                上一页
-              </button>
+            <nav
+              className="pagination archive-pagination"
+              aria-label="资料分页"
+            >
               <span>
                 第 {page} / {pages} 页
               </span>
-              <button
-                className="button"
-                disabled={page >= pages}
-                onClick={() => goToPage(page + 1)}
-              >
-                下一页
-              </button>
+              <div>
+                <button
+                  className="button"
+                  disabled={page <= 1}
+                  onClick={() => goToPage(page - 1)}
+                >
+                  上一页
+                </button>
+                <button
+                  className="button"
+                  disabled={page >= pages}
+                  onClick={() => goToPage(page + 1)}
+                >
+                  下一页
+                </button>
+              </div>
             </nav>
           )}
-        </div>
+        </section>
       </div>
       <dialog
         className="filter-dialog"

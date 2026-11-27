@@ -58,7 +58,15 @@ function fileAccess(
 const worker = setupWorker(
   ...authHandlers,
   ...submissionHandlers,
-  http.get(`${base}/catalog`, () => (role() ? ok(catalog) : denied())),
+  http.get(`${base}/catalog`, () => {
+    if (!role()) return denied();
+    const years = [
+      ...new Set(
+        resources.flatMap(({ year }) => (year === null ? [] : [year])),
+      ),
+    ].sort((a, b) => b - a);
+    return ok({ ...catalog, years });
+  }),
   http.get(`${base}/courses`, ({ request }) => {
     if (!role()) return denied();
     const params = new URL(request.url).searchParams;
@@ -91,9 +99,12 @@ const worker = setupWorker(
       const aliases =
         courses.find((course) => course.id === item.course.id)?.aliases ?? [];
       return (
-        [item.title, item.course.name, ...aliases].some((value) =>
-          value.toLowerCase().includes(keyword),
-        ) &&
+        [
+          item.title,
+          item.course.name,
+          ...aliases,
+          ...item.files.map(({ filename }) => filename),
+        ].some((value) => value.toLowerCase().includes(keyword)) &&
         matches(
           "college_ids",
           item.colleges.map((college) => college.id),

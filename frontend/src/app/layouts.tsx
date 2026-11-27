@@ -16,7 +16,7 @@ import { loginPath } from "./session";
 
 const userNav = [
   { to: "/", label: "首页", icon: House },
-  { to: "/resources", label: "资料库", icon: LibraryBig },
+  { to: "/resources", label: "资料索引", icon: LibraryBig },
   { to: "/requests", label: "征集", icon: ClipboardList },
   { to: "/profile", label: "我的", icon: UserRound },
 ];
@@ -94,7 +94,7 @@ export function UserLayout() {
           </div>
         </div>
       </header>
-      <main id="main-content" className="container">
+      <main id="main-content" className="app-container">
         <Outlet />
       </main>
       <nav className="mobile-nav" aria-label="移动主导航">
@@ -124,7 +124,7 @@ export function AdminLayout() {
           </Link>
         </div>
       </header>
-      <main className="container">
+      <main className="app-container">
         <Outlet />
       </main>
     </div>

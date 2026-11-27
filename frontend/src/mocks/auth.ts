@@ -9,7 +9,7 @@ const challenges = new Map<
   { id: string; sent: number; attempts: number }
 >();
 const expiresIn = 300;
-const resendAfter = 10;
+const resendAfter = 30;
 
 export function role(): Role | null {
   const value = sessionStorage.getItem(roleKey);

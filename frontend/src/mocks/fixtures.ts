@@ -88,12 +88,14 @@ const exampleResources: ResourceDetail[] = samples.map(
         filename: `${file === 0 ? title : "参考答案"}.pdf`,
         content_type: "application/pdf",
         size_bytes: 420_000 + index * 96_000 + file * 570_000,
-        preview_supported: true,
+        preview_supported: false,
+        download_supported: false,
       }),
     );
 
     return {
       id,
+      archive_code: `ARC-${String(index + 1).padStart(3, "0")}`,
       title,
       course: category(course.id, course.name),
       colleges: colleges.filter((college) =>
@@ -120,11 +122,17 @@ const exampleResources: ResourceDetail[] = samples.map(
 );
 
 export const localPdfFiles = new Map(samplePdfs.map((file) => [file.id, file]));
+const localPdfTitles: Record<string, string> = {
+  "24高数一真题_all_pages.pdf": "2024 年高等数学（一）真题",
+  "大学物理医期末考试A卷.pdf": "大学物理（医）期末考试 A 卷",
+};
 const sampleTimestamp = new Date().toISOString();
 export const resources: ResourceDetail[] = [
-  ...samplePdfs.map((file): ResourceDetail => ({
+  ...samplePdfs.map((file, index): ResourceDetail => ({
     id: `resource-${file.id}`,
-    title: file.filename.replace(/\.pdf$/i, ""),
+    archive_code: `ARC-${String(exampleResources.length + index + 1).padStart(3, "0")}`,
+    title:
+      localPdfTitles[file.filename] ?? file.filename.replace(/\.pdf$/i, ""),
     course: category("local-sample", "本地测试资料"),
     colleges: [],
     grades: [],
